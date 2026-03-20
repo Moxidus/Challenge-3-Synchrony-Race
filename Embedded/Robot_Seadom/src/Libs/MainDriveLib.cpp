@@ -92,7 +92,8 @@ void MainDrive::ResumeFollowing(){
     moveDirection(0);
 }
 
-void MainDrive::SetDefaultSpeed(uint8_t newSpeed){
+void MainDrive::SetDefaultSpeed(int newSpeed){
+    newSpeed = constrain(newSpeed, 0, MAX_SPEED);
     defaultSpeed = newSpeed;
 }
 

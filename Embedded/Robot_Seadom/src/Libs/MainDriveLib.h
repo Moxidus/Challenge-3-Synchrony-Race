@@ -44,7 +44,7 @@ public:
     void UpdateMainDrive();
     void StopFollowing();
     void ResumeFollowing();
-    void SetDefaultSpeed(uint8_t newSpeed);
+    void SetDefaultSpeed(int newSpeed);
     void Flip();
 };
 

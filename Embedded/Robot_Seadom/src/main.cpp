@@ -7,7 +7,7 @@
 
 
 Gripper gripper(PORT4A);
-MainDrive lineFollower(6, SLOT1, SLOT2);
+MainDrive mainDrive(6, SLOT1, SLOT2);
 
 int executeCommand(String cmd);
 void HandleCommands();
@@ -18,8 +18,8 @@ void setup()
   Serial.begin(115200);
   
   setUpBluetooth();
-  lineFollower.SetupLineFollow();
-  lineFollower.StopFollowing();
+  mainDrive.SetupLineFollow();
+  mainDrive.StopFollowing();
 
 }
 
@@ -28,7 +28,7 @@ void loop()
   HandleCommands();
   
   
-  lineFollower.UpdateMainDrive();
+  mainDrive.UpdateMainDrive();
   gripper.update();
 
   delay(1);
@@ -67,19 +67,22 @@ int executeCommand(String cmd){
       gripper.open();
     }
     else if (cmd == "stop track"){
-      lineFollower.StopFollowing();
+      mainDrive.StopFollowing();
     }
     else if (cmd == "start track"){
-      lineFollower.ResumeFollowing();
+      mainDrive.ResumeFollowing();
     } 
     else if (cmd == "flip"){
-      lineFollower.Flip();
+      mainDrive.Flip();
     } 
     else if (cmd == "celebrate"){
       // TODO: Implement Celebration
     }  
     else if (cmd.startsWith("setspeed")){
-      // TODO: Implement Speed
+      cmd.replace("setspeed", "");
+      int val = cmd.toInt();
+      mainDrive.SetDefaultSpeed(val);
+      
     } else {
       Serial.println("Unknown command: " + cmd);
       Serial3.println("Unknown command: " + cmd);
