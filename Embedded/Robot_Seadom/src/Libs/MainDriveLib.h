@@ -3,7 +3,9 @@
 #include <Arduino.h>
 #include "MeMegaPi.h"
 
-class LineFollower
+#define MAX_SPEED 255
+
+class MainDrive
 {
 private:
 
@@ -16,17 +18,19 @@ private:
     float i = 0;
     float d = 0;
     float lastE = 0;
+    uint8_t defaultSpeed = 255;
     unsigned long softStartTimer = 0;
     unsigned long softStartDuration = 500;
     bool isStopped = false;
 
-    int getPos();
-    void moveDirection(float direction, int speed = 255);
+    int getAndUpdatePos();
+    void moveDirection(float direction, uint8_t speed = NULL);
     void handleLeftEncoder();
     void handleRightEncoder();
     void setupEncoders();
+    void updateLineFollow();
 public:
-    static LineFollower* singletonInstance;
+    static MainDrive* singletonInstance;
     static void pulseCheckLeftEncoder();
     static void pulseCheckRightEncoder();
     static void targetReached(int16_t slot, int16_t exitId);
@@ -35,12 +39,13 @@ public:
     MeEncoderOnBoard rightEncoder;
     MeLineFollower lineFollowerSensor;
 
-    LineFollower(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort);
+    MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort);
     void SetupLineFollow(float kp = 0.05, float ki = 0.001, float kd = 0.3);
     void UpdateMainDrive();
     void StopFollowing();
     void ResumeFollowing();
-    void Do180();
+    void SetDefaultSpeed(uint8_t newSpeed);
+    void Flip();
 };
 
 #endif

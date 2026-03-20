@@ -6,10 +6,8 @@
 #include "Libs/MainDriveLib.h"
 
 
-
-// grippers
 Gripper gripper(PORT4A);
-LineFollower lineFollower(6, SLOT1, SLOT2);
+MainDrive lineFollower(6, SLOT1, SLOT2);
 
 int executeCommand(String cmd);
 void HandleCommands();
@@ -75,7 +73,13 @@ int executeCommand(String cmd){
       lineFollower.ResumeFollowing();
     } 
     else if (cmd == "flip"){
-      lineFollower.Do180();
+      lineFollower.Flip();
+    } 
+    else if (cmd == "celebrate"){
+      // TODO: Implement Celebration
+    }  
+    else if (cmd.startsWith("setspeed")){
+      // TODO: Implement Speed
     } else {
       Serial.println("Unknown command: " + cmd);
       Serial3.println("Unknown command: " + cmd);

@@ -2,9 +2,9 @@
 #include <Arduino.h>
 #include "MeMegaPi.h"
 
-LineFollower* LineFollower::singletonInstance = nullptr;
+MainDrive* MainDrive::singletonInstance = nullptr;
 
-LineFollower::LineFollower(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort)
+MainDrive::MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort)
     : leftEncoder(leftEncoderPort),
       rightEncoder(rightEncoderPort),
       lineFollowerSensor(lineSensorPort){
@@ -12,7 +12,7 @@ LineFollower::LineFollower(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint
 }
 
 
-void LineFollower::SetupLineFollow(float kp, float ki, float kd){
+void MainDrive::SetupLineFollow(float kp, float ki, float kd){
 
     setupEncoders();
 
@@ -30,15 +30,20 @@ void LineFollower::SetupLineFollow(float kp, float ki, float kd){
 }
 
 
-void LineFollower::UpdateMainDrive(){
+void MainDrive::UpdateMainDrive(){
 
     leftEncoder.loop();
     rightEncoder.loop();
 
     if (isStopped) // stops following if 
         return;
-    
-    int pos = getPos();
+
+    updateLineFollow();
+}
+
+void MainDrive::updateLineFollow(){    
+
+    int pos = getAndUpdatePos();
     int e = pos - setPoint;
 
     float p = kp*e;
@@ -68,10 +73,11 @@ void LineFollower::UpdateMainDrive(){
 
     
     moveDirection(pid);
+
 }
 
 
-void LineFollower::StopFollowing(){
+void MainDrive::StopFollowing(){
     isStopped = true;
     
     i = 0;
@@ -81,14 +87,21 @@ void LineFollower::StopFollowing(){
     moveDirection(0,0);
 }
 
-void LineFollower::ResumeFollowing(){
+void MainDrive::ResumeFollowing(){
     isStopped = false;
-    moveDirection(0,255);
+    moveDirection(0);
+}
+
+void MainDrive::SetDefaultSpeed(uint8_t newSpeed){
+    defaultSpeed = newSpeed;
 }
 
 
 // Function to move the robot in a certain direction with a given speed (-1.0 for full left, 1.0 for full right, 0 for straight)
-void LineFollower::moveDirection(float direction, int speed){
+void MainDrive::moveDirection(float direction, uint8_t speed){
+
+    if(speed == NULL)
+        speed = defaultSpeed;
 
     if (softStartTimer + softStartDuration > millis()) {
         // During the soft start period, scale the speed based on elapsed time
@@ -96,7 +109,7 @@ void LineFollower::moveDirection(float direction, int speed){
         speed = (int)(speed * scale);
     }
 
-    speed = constrain(speed, 0, 255);
+    speed = constrain(speed, 0, MAX_SPEED);
 
     int leftPWM = speed;
     int rightPWM = speed;
@@ -108,8 +121,8 @@ void LineFollower::moveDirection(float direction, int speed){
     }
 
     // Motor PWM values should be between -255 and 255
-    leftPWM = constrain(leftPWM, 0, 255);
-    rightPWM = constrain(rightPWM, 0, 255);
+    leftPWM = constrain(leftPWM, 0, MAX_SPEED);
+    rightPWM = constrain(rightPWM, 0, MAX_SPEED);
 
     leftEncoder.setMotorPwm(-leftPWM);
     rightEncoder.setMotorPwm(rightPWM);
@@ -117,7 +130,7 @@ void LineFollower::moveDirection(float direction, int speed){
     // leftEncoder.setTarPWM
 }
 
-int LineFollower::getPos(){
+int MainDrive::getAndUpdatePos(){
     static int lastDirection = 1; // 1 left, 5 right
 
     int s1 = lineFollowerSensor.readSensor1();
@@ -141,43 +154,44 @@ int LineFollower::getPos(){
 
 
 // TODO: Implement line search function so that it automatically finds in which dirrection is the line
-void LineFollower::Do180(){
+void MainDrive::Flip(){
     bool lastIsStoped = isStopped;
     StopFollowing();
 
     delay(300); // wait for motors to stop
 
     // pure 180 is about 475 not 530
+    // overshoot 180 by about 10 degrees
     leftEncoder.move(530, 100, 1, targetReached);
     rightEncoder.move(530, 100, 2, targetReached);
 
-
+    // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
     {
-        UpdateMainDrive();
-        getPos();
+        UpdateMainDrive(); // updates positions
+        getAndUpdatePos(); // makes sure the robot knows where the line is
     }
 
+    // Turn off PID mode
     leftEncoder.setMotionMode(PWM_MODE);
     rightEncoder.setMotionMode(PWM_MODE);
     
 
-
+    // resume line
     if (!lastIsStoped)
         ResumeFollowing();
 }
 
 
-void LineFollower::targetReached(int16_t slot, int16_t exitId){
-    Serial.println("Target at " + String(slot) + "was reached with id " + String(exitId));
+void MainDrive::targetReached(int16_t slot, int16_t exitId){
+    // Serial.println("Target at " + String(slot) + "was reached with id " + String(exitId));
+    // might be usefull in the future
 }
-
-
 
 
 // Encoder setup
 
-void LineFollower::setupEncoders(){
+void MainDrive::setupEncoders(){
     Serial.println("Encoder setup");
 
     singletonInstance = this;
@@ -185,9 +199,11 @@ void LineFollower::setupEncoders(){
     attachInterrupt(leftEncoder.getIntNum(), pulseCheckLeftEncoder, RISING);  // Count pulses on rising edges
     attachInterrupt(rightEncoder.getIntNum(), pulseCheckRightEncoder, RISING);  // Count pulses on rising edges
 
+    //TODO: Tune the PID values for the motors 
+
     leftEncoder.setPulse(8);            // Encoder pulses per motor revolution (hardware-specific)
     leftEncoder.setRatio(46.67);        // Gear ratio used for position/speed calculations
-    leftEncoder.setSpeedPid(0.18,0,0); 
+    leftEncoder.setSpeedPid(0.18,0,0);
     leftEncoder.setPosPid(1.8,0,1.2);   // Position PID gains (P, I, D) these values have been obtained from the generated mblock code
 
     rightEncoder.setPulse(8);            // Encoder pulses per motor revolution (hardware-specific)
@@ -198,15 +214,15 @@ void LineFollower::setupEncoders(){
 }
 
 
-void LineFollower::pulseCheckLeftEncoder() {
+void MainDrive::pulseCheckLeftEncoder() {
     singletonInstance->handleLeftEncoder();
 }
 
-void LineFollower::pulseCheckRightEncoder() {
+void MainDrive::pulseCheckRightEncoder() {
     singletonInstance->handleRightEncoder();
 }
 
-void LineFollower::handleLeftEncoder(void)
+void MainDrive::handleLeftEncoder(void)
 {
     // Interrupt handler for left encoder pulse counting.
     if (digitalRead(leftEncoder.getPortB()) == 0)
@@ -219,7 +235,7 @@ void LineFollower::handleLeftEncoder(void)
     }
 }
 
-void LineFollower::handleRightEncoder(void)
+void MainDrive::handleRightEncoder(void)
 {
     // Interrupt handler for right encoder pulse counting.
     if (digitalRead(rightEncoder.getPortB()) == 0)
