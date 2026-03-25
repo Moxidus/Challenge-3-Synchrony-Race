@@ -6,8 +6,28 @@
 #include "Libs/MainDriveLib.h"
 
 
+
+// SELECT ROBOT YOU ARE PROGRAMMING!!!
+#define MOTHER_ROBOT
+// #define DAUGHTER_ROBOT
+
+#ifdef DAUGHTER_ROBOT
 Gripper gripper(PORT4A);
 MainDrive mainDrive(6, SLOT1, SLOT2);
+float KP = 0.05;
+float KI = 0.001;
+float KD = 0.3;
+bool invertForward = false;
+#endif
+
+#ifdef MOTHER_ROBOT
+Gripper gripper(PORT3A);
+MainDrive mainDrive(6, SLOT2, SLOT1);
+float KP = 0.3;
+float KI = 0.000;
+float KD = 0.2;
+bool invertForward = true;
+#endif
 
 int executeCommand(String cmd);
 void HandleCommands();
@@ -18,7 +38,7 @@ void setup()
   Serial.begin(115200);
   
   setUpBluetooth();
-  mainDrive.SetupLineFollow();
+  mainDrive.SetupLineFollow(KP, KI, KD, invertForward);
   mainDrive.StopFollowing();
 
 }

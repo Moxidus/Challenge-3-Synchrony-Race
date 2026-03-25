@@ -22,6 +22,7 @@ private:
     unsigned long softStartTimer = 0;
     unsigned long softStartDuration = 500;
     bool isStopped = false;
+    bool invertForward = false;
 
     int getAndUpdatePos();
     void moveDirection(float direction, uint8_t speed = NULL);
@@ -40,7 +41,7 @@ public:
     MeLineFollower lineFollowerSensor;
 
     MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort);
-    void SetupLineFollow(float kp = 0.05, float ki = 0.001, float kd = 0.3);
+    void SetupLineFollow(float kp = 0.05, float ki = 0.001, float kd = 0.3, bool inverForward = false);
     void UpdateMainDrive();
     void StopFollowing();
     void ResumeFollowing();

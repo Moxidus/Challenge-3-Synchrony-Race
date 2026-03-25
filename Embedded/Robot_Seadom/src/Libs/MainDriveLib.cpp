@@ -12,13 +12,14 @@ MainDrive::MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t ri
 }
 
 
-void MainDrive::SetupLineFollow(float kp, float ki, float kd){
+void MainDrive::SetupLineFollow(float kp, float ki, float kd, bool inverForward){
 
     setupEncoders();
 
     this->kp = kp;
     this->ki = ki;
     this->kd = kd;
+    this->invertForward = inverForward;
 
 
     i = 0;
@@ -125,8 +126,17 @@ void MainDrive::moveDirection(float direction, uint8_t speed){
     leftPWM = constrain(leftPWM, 0, MAX_SPEED);
     rightPWM = constrain(rightPWM, 0, MAX_SPEED);
 
-    leftEncoder.setMotorPwm(-leftPWM);
-    rightEncoder.setMotorPwm(rightPWM);
+    if(invertForward){
+        leftEncoder.setMotorPwm(leftPWM);
+        rightEncoder.setMotorPwm(-rightPWM);
+    }else{
+        leftEncoder.setMotorPwm(-leftPWM);
+        rightEncoder.setMotorPwm(rightPWM);
+    }
+
+
+
+
     // later we should move to setTarPWM as it handles acceleration better but it breaks line tracking so for now we will use setMotorPWM
     // leftEncoder.setTarPWM
 }
@@ -163,8 +173,13 @@ void MainDrive::Flip(){
 
     // pure 180 is about 475 not 530
     // overshoot 180 by about 10 degrees
-    leftEncoder.move(530, 100, 1, targetReached);
-    rightEncoder.move(530, 100, 2, targetReached);
+    if(invertForward){
+        leftEncoder.move(-530, 100, 1, targetReached);
+        rightEncoder.move(-530, 100, 2, targetReached);
+    }else{
+        leftEncoder.move(530, 100, 1, targetReached);
+        rightEncoder.move(530, 100, 2, targetReached);
+    }
 
     // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
