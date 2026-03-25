@@ -1,0 +1,317 @@
+    1  update
+    2  sudo apt update
+    3  py --version
+    4  python --version
+    5  python3 --version
+    6  sudo apt install python3-opencv
+    7  python3-opencv --version
+    8  python3 -c "import cv2; print(cv2._version_)"
+    9  nano myscript.sh
+   10  chmod +x myscript.sh
+   11  ./myscript.sh
+   12  nano camFollow.sh
+   13  sudo apt install python3-numpy
+   14  sudo apt install build-essential cmake
+   15  sudo apt-get install libgtk-3-dev
+   16  sudo apt-get install libboost-all-dev
+   17  python3 -m venv --system-site-packages DIY_Cam_Follow
+   18  source DIY_Cam_Follow/bin/activate
+   19  pip install matplotlib
+   20  pip install mediapipe
+   21  pip install pandas-stubs
+   22  pip install mediapipe
+   23  pip install matplotlib
+   24  python
+   25  pip install dlib
+   26  source DIY_Cam_Follow
+   27  source DIY_Cam_Follow/bin/bash
+   28  source DIY_Cam_Follow/bin/activate
+   29  cd Project
+   30  ifconfig
+   31  ping 10.39.33.96
+   32  vlc --version
+   33  vlc
+   34  sudo
+   35  sudo -i
+   36  cd /usr/local/bin/
+   37  ls
+   38  iriunwebcam 
+   39  ./iriunwebcam 
+   40  ls -l 
+   41  cat iriunwebcam 
+   42  top# iriunwebcam 
+   43  top iriunwebcam 
+   44  iriunwebcam 
+   45  sudo apt install gdeb
+   46  sudo apt install gdebi
+   47  iriunwebcam 
+   48  iriniumwebcam
+   49  sudo usermod - a -G dialout $USER
+   50  sudo reboot
+   51  groups | grep dialout
+   52  sudo usermod -a -G dialout $pi4
+   53  ls
+   54  cd DIY_Cam_Follow/
+   55  ls
+   56  cd ..
+   57  ls
+   58  cd Project/
+   59  ls
+   60  py --version
+   61  python3 --version
+   62  python3 ./Cam_follow.py 
+   63  cd /dev/
+   64  ls
+   65  clear
+   66  ls
+   67  lsusb
+   68  cd ~
+   69  ls
+   70  cd Project/
+   71  ls
+   72  Python3 Cam_follow.py 
+   73  python3 Cam_follow.py 
+   74  cd /dev/
+   75  lsusb
+   76  ls
+   77  pip install serial
+   78  cd ~
+   79  python3 CAMTEST.py 
+   80  python3 ./CAMTEST.py
+   81  python3 Project/CAMTEST.py
+   82  python3 --version opencv-python
+   83  opencv-python --version
+   84  python3 -c "import cv2; print(cv2.__version__)"
+   85  python3 -c "import serial; print(serial.__version__)"
+   86  python3 Project/TALKTEST.py
+   87  python3 TALKTEST.py
+   88  python3 Project/CAMTEST.py
+   89  python3 TALKTEST.py
+   90  python3 Project/CAMTEST.py
+   91  python3 TALKTEST.py
+   92  python3 Project/Cam_Follow.py
+   93  python3 Project/Cam_follow.py
+   94  python3 Project/CAMTEST.py
+   95  python3 Project/Cam_follow.py
+   96  python3 Project/CAMTEST.py
+   97  python3 Project/Cam_follow.py
+   98  cd Project/
+   99  python3 Cam_follow.py 
+  100  python3 Project/Cam_follow.py 
+  101  cd Project/
+  102  python3 Take2.py 
+  103  python3 CAMTEST.py 
+  104  python3 Cam_follow.py 
+  105  python3 CAMTEST.py 
+  106  python3 CAMTEST.py #
+  107  python3 CAMTEST.py 
+  108  cd Project/
+  109  python3 CAMTEST.py 
+  110  cd Project/
+  111  python3 Cam_follow.py 
+  112  python3 CAMTEST.py 
+  113  python3 Cam_follow.py 
+  114  free -h
+  115  /dev//tty*
+  116  ls /dev/tty*
+  117  lsusb
+  118  cd Project
+  119  python3 Cam_follow.py 
+  120  python3 CAMTEST.py 
+  121  v4l2-ctl --list-formats-ext
+  122  cd Project/
+  123  python3 CAMTEST.py 
+  124  cd Project/
+  125  python3 CAMTEST.py 
+  126  cd Project/
+  127  python3 CAMTEST.py 
+  128  cd Project/
+  129  python3 Cam_follow.py 
+  130  python3 CAMTEST.py 
+  131  cd Project/
+  132  python3 CAMTEST.py 
+  133  cd Project/
+  134  python3 CAMTEST.py 
+  135  cd Project/
+  136  python3 Cam_follow.py 
+  137  cd Project/
+  138  python3 Cam_follow.py 
+  139  cd Project/
+  140  python3 Cam_follow.py 
+  141  cd Project/
+  142  python3 Cam_follow.py 
+  143  cd Project/
+  144  python3 Cam_follow.py 
+  145  ssh
+  146  sudo raspi-config
+  147  top
+  148  ipcofng
+  149  ipcofing
+  150  ipcofig
+  151  ifconfig
+  152  sudo reboot
+  153  ifconfig
+  154  ls
+  155  cd Doe
+  156  cd Downloads/
+  157  ls
+  158  unzip droidcam_2.1.5
+  159  ls
+  160  mkdir droidSRC
+  161  mv droidcam_2.1.5.zip droidSRC/
+  162  ls
+  163  cd droidSRC/
+  164  ls
+  165  unzip droidcam_2.1.5.zip 
+  166  ls
+  167  cd droidcam-cli
+  168  ls -l
+  169  ./droidcam-cli 
+  170  ls
+  171  cd droidcam-linux-client-2.1.5/
+  172  ls
+  173  cd src/
+  174  ls
+  175  cd ..
+  176  ls -l
+  177  cd droidcam-linux-client-2.1.5/
+  178  ls
+  179  ls -l
+  180  ./install-client 
+  181  sudo ./install-client 
+  182  mrdir build
+  183  mkdir build
+  184  cd build/
+  185  ls
+  186  bluetoothctl
+  187  rfcomm
+  188  bluetoothctl
+  189  scan on
+  190  bluetoothctl
+  191  cd Project/
+  192  Python3 BLETEST.py 
+  193  Python BLETEST.py 
+  194  Py BLETEST.py 
+  195  Python3 BLETEST.py 
+  196  python3 BLETEST.py 
+  197  python3 -m pip install bleak
+  198  sudo apt install python3-bleak
+  199  python3 BLETEST.py 
+  200  bluetoothctl
+  201  python3 BLETEST.py 
+  202  bluetoothctl
+  203  python3 BLETEST.py 
+  204  sudo rfcomm bind 00:1B:10:68:77:0A
+  205  sudo rfcomm bind 0 00:1B:10:68:77:0A
+  206  ls -l /dev/rfcomm0
+  207  minicom -D /dev/rfcomm0 -b 115200
+  208  cd Project/
+  209  python3 CAMDIST.py 
+  210  python3 CAMTEST.py 
+  211  cd ..
+  212  ls
+  213  mkdir droidCam
+  214  cd droidCam/
+  215  wget https://github.com/dev47apps/droidcam-linux-client/archive/refs/tags/v2.1.5.zip
+  216  ls
+  217  unzip v2.1.5.zip 
+  218  ls
+  219  cd droidcam-linux-client-2.1.5/
+  220  ls
+  221  cd src
+  222  ls
+  223  ifconfig
+  224  cd Project/
+  225  python3 CAMTEST.py 
+  226  ping 8.8.8.8#
+  227  ping 8.8.8.8
+  228  python3 A53T.py 
+  229  droidcam-cli adb 4755
+  230  cd Project/
+  231  python3 BLETEST.py 
+  232  ls
+  233  ps
+  234  top
+  235  kill 2053
+  236  fireexplorer
+  237  firexplore
+  238  firexplorer
+  239  firexplorer
+  240  fireexplorer
+  241  ping 8.8.8.8
+  242  ping 8.8.8.8
+  243  ls
+  244  mkdir temp
+  245  cd temp/
+  246  wget example.com
+  247  ls
+  248  cd ..
+  249  ls
+  250  cd droidCam/
+  251  ls
+  252  cd droidcam-linux-client-2.1.5/
+  253  ls
+  254  sudo apt update
+  255  sudo apt install -y   git build-essential pkg-config   libavutil-dev libswscale-dev libasound2-dev   libspeex-dev libusbmuxd-dev libplist-dev libturbojpeg0-dev
+  256  ls ..
+  257  ls
+  258  cd ..
+  259  ls
+  260  rm -fr droidcam-linux-client-2.1.5/*
+  261  ls
+  262  rm -fr droidcam-linux-client-2.1.5
+  263  rm v2.1.5.zip 
+  264  ls
+  265  git clone https://github.com/dev47apps/droidcam-linux-client.git
+  266  ls
+  267  cd droidcam-linux-client/
+  268  make clean
+  269  make droidcam-cli 
+  270  sudo apt install -y libusbmuxd-dev libplist-dev
+  271  pkg-config --modversion libusbmuxd
+  272  dpkg --print-architecture
+  273  dpkg -L libusbmuxd-dev | grep pkgconfig
+  274  echo "$PKG_CONFIG_PATH"
+  275  pkg-config --variable pc_path pkg-config
+  276  top
+  277  make clean
+  278  make droidcam-cli USBMUXD="-lusbmuxd-2.0"
+  279  pkg-config --modversion libusbmuxd-2.0
+  280  make clean
+  281  make droidcam-cli USBMUXD="-lusbmuxd-2.0"
+  282  ls
+  283  ./droidcam-cli 
+  284  sudo cp droidcam-cli /usr/local/bin/
+  285  sudo chmod +x /usr/local/bin/droidcam-cli
+  286  droidcam-cli 
+  287  droidcam-cli adb
+  288  droidcam-cli adb 4755
+  289  ls -l /dev/video*
+  290  v4l2-ctl --list-devices
+  291  lsmod | grep v4l2
+  292  iriunwebcam 
+  293  sudo modprobe -r v4l2loopback
+  294  which iriunwebcam 
+  295  cd /usr/local/bin/iriunwebcam
+  296  rm -rf /usr/local/bin/iriunwebcam
+  297  sudo rm -f /usr/local/bin/iriunwebcam
+  298  sudo rm -f /etc/modprobe.d/iriunwebcam*.conf
+  299  sudo rm -f /usr/lib/modprobe.d/iriunwebcam*.conf
+  300  sudo rm -f /etc/modules-load.d/iriunwebcam*.conf
+  301  sudo fuser -v /dev/video0
+  302  sudo reboot 7
+  303  cd Project/
+  304  python3 A53T.py 
+  305  ls
+  306  cd Project/
+  307  python3 A53T.py 
+  308  cat
+  309  cat A53T.py 
+  310  nano A53T.py 
+  311  python3 A53T.py 
+  312  nano A53T.py 
+  313  ls
+  314  python3 blueTest.py 
+  315  clear
+  316  ls
+  317  history > gettingDroid.txt
