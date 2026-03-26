@@ -32,7 +32,8 @@ while True:
             cv2.putText(frame, f'ID: {ids:.2f}m', 
                        (int(corners_i[0][0][0]), int(corners_i[0][0][1]-10)),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
- 
+
+    print(corners[0])
     cv2.imshow('ArUco Distance (A53)', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'): break
  
