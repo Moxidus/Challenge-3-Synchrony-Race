@@ -4,12 +4,17 @@
 #include <ctype.h>
 #include "MeMegaPi.h"
 #include "Libs/MainDriveLib.h"
+#include "Libs/LinearMotor.h"
 
 
 
 // SELECT ROBOT YOU ARE PROGRAMMING!!!
 #define MOTHER_ROBOT
 // #define DAUGHTER_ROBOT
+
+#if defined(MOTHER_ROBOT) && defined(DAUGHTER_ROBOT)
+#error "Only one robot can be defined: MOTHER_ROBOT or DAUGHTER_ROBOT"
+#endif
 
 #ifdef DAUGHTER_ROBOT
 Gripper gripper(PORT4A);
@@ -23,6 +28,7 @@ bool invertForward = false;
 #ifdef MOTHER_ROBOT
 Gripper gripper(PORT3A);
 MainDrive mainDrive(6, SLOT2, SLOT1);
+LinearMotor linearMotor(SLOT4);
 float KP = 0.3;
 float KI = 0.000;
 float KD = 0.2;
@@ -41,6 +47,10 @@ void setup()
   mainDrive.SetupLineFollow(KP, KI, KD, invertForward);
   mainDrive.StopFollowing();
 
+  #ifdef MOTHER_ROBOT
+  linearMotor.SetupLinearMotor();
+  #endif
+
 }
 
 void loop()
@@ -50,6 +60,10 @@ void loop()
   
   mainDrive.UpdateMainDrive();
   gripper.update();
+
+  #ifdef MOTHER_ROBOT
+  linearMotor.Update();
+  #endif
 
   delay(1);
 }
@@ -94,7 +108,18 @@ int executeCommand(String cmd){
     } 
     else if (cmd == "flip"){
       mainDrive.Flip();
-    } 
+    }
+    #ifdef MOTHER_ROBOT // mother ship only commands
+
+    else if (cmd == "lin home"){
+      linearMotor.MoveHome();
+    }
+    else if (cmd == "lin down"){
+      linearMotor.MoveDown();
+    }
+
+
+    #endif
     else if (cmd == "celebrate"){
       // TODO: Implement Celebration
     }  
