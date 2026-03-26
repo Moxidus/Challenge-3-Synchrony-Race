@@ -8,6 +8,7 @@
 
 
 
+
 // SELECT ROBOT YOU ARE PROGRAMMING!!!
 #define MOTHER_ROBOT
 // #define DAUGHTER_ROBOT
@@ -93,45 +94,83 @@ void HandleCommands(){
   }
 }
 
-int executeCommand(String cmd){
-    if (cmd == "close grip"){
-      gripper.close();
-    }
-    else if (cmd == "open grip"){
-      gripper.open();
-    }
-    else if (cmd == "stop track"){
-      mainDrive.StopFollowing();
-    }
-    else if (cmd == "start track"){
-      mainDrive.ResumeFollowing();
-    } 
-    else if (cmd == "flip"){
-      mainDrive.Flip();
-    }
-    #ifdef MOTHER_ROBOT // mother ship only commands
+int executeCommand(String cmd)
+{
+  if (cmd == "close grip")
+  {
+    gripper.close();
+  }
+  else if (cmd == "open grip")
+  {
+    gripper.open();
+  }
+  else if (cmd == "stop track")
+  {
+    mainDrive.StopFollowing();
+  }
+  else if (cmd == "start track")
+  {
+    mainDrive.ResumeFollowing();
+  }
+  else if (cmd == "flip")
+  {
+    mainDrive.Flip();
+  }
+#ifdef MOTHER_ROBOT // mother ship only commands
 
-    else if (cmd == "lin home"){
-      linearMotor.MoveHome();
-    }
-    else if (cmd == "lin down"){
-      linearMotor.MoveDown();
-    }
+  else if (cmd == "lin home")
+  {
+    linearMotor.MoveHome();
+  }
+  else if (cmd == "lin down")
+  {
+    linearMotor.MoveDown();
+  }
+#endif
+  else if (cmd == "celebrate")
+  {
+    // TODO: Implement Celebration
+  }
+  else if (cmd == "start point")
+  {
+    // TODO: Implement Celebration
+  }
+  else if (cmd == "stop point")
+  {
+    // TODO: Implement Celebration
+  }
+  else if (cmd.startsWith("point"))
+  {
+    int x, y;
+    sscanf(cmd.c_str(), "point %d %d", &x, &y);
+    // int val = cmd.toInt();
+    Serial.println("moving to points: " + String(x) + " " + String(y));
+  }
+  else if (cmd.startsWith("move"))
+  {
+    cmd.replace("move", "");
+    int val = cmd.toInt();
+    mainDrive.MoveSteps(val);
+  }
+  else if (cmd.startsWith("rotate"))
+  {
+    cmd.replace("rotate", "");
+    int val = cmd.toInt();
+    mainDrive.RotateSteps(val);
+  }
+  else if (cmd.startsWith("setspeed"))
+  {
+    cmd.replace("setspeed", "");
+    int val = cmd.toInt();
+    mainDrive.SetDefaultSpeed(val);
+  }
+  else
+  {
+    Serial.println("Unknown command: " + cmd);
+    Serial3.println("Unknown command: " + cmd);
+  }
 
+  Serial.println("executed command: " + cmd);
 
-    #endif
-    else if (cmd == "celebrate"){
-      // TODO: Implement Celebration
-    }  
-    else if (cmd.startsWith("setspeed")){
-      cmd.replace("setspeed", "");
-      int val = cmd.toInt();
-      mainDrive.SetDefaultSpeed(val);
-      
-    } else {
-      Serial.println("Unknown command: " + cmd);
-      Serial3.println("Unknown command: " + cmd);
-    }
-
-   return 0; 
+  return 0;
 }

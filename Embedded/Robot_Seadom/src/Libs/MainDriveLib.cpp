@@ -85,7 +85,8 @@ void MainDrive::StopFollowing(){
     d = 0;
     lastE = 0;
 
-    moveDirection(0,0);
+    leftEncoder.setMotorPwm(0);
+    rightEncoder.setMotorPwm(0);
 }
 
 void MainDrive::ResumeFollowing(){
@@ -96,6 +97,85 @@ void MainDrive::ResumeFollowing(){
 void MainDrive::SetDefaultSpeed(int newSpeed){
     newSpeed = constrain(newSpeed, 0, MAX_SPEED);
     defaultSpeed = newSpeed;
+}
+
+
+
+void MainDrive::MoveSteps(int steps){
+    bool lastIsStoped = isStopped;
+    StopFollowing();
+
+    delay(300); // wait for motors to stop
+
+    // pure 180 is about 475 not 530
+    // overshoot 180 by about 10 degrees
+    leftEncoder.setMotorPwm(0);
+    rightEncoder.setMotorPwm(0);
+    if(invertForward){
+        leftEncoder.move(steps, ((float)defaultSpeed/MAX_SPEED)*100);
+        rightEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
+    }else{
+        leftEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
+        rightEncoder.move(steps, ((float)defaultSpeed/MAX_SPEED)*100);
+    }
+
+    // wait until we reach the target
+    while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
+    {
+        UpdateMainDrive(); // updates positions
+        getAndUpdatePos(); // makes sure the robot knows where the line is
+    }
+
+    // Turn off PID mode
+    leftEncoder.setMotionMode(PWM_MODE);
+    rightEncoder.setMotionMode(PWM_MODE);
+    
+
+    // resume line
+    if (!lastIsStoped)
+        ResumeFollowing();
+}
+
+
+void MainDrive::RotateSteps(int steps){
+    bool lastIsStoped = isStopped;
+    StopFollowing();
+
+    leftEncoder.setMotorPwm(0);
+    rightEncoder.setMotorPwm(0);
+    leftEncoder.setTarPWM(0);
+    rightEncoder.setTarPWM(0);
+    leftEncoder.loop();
+    rightEncoder.loop();
+    delay(300); // wait for motors to stop
+
+    // pure 180 is about 475 not 530
+    // overshoot 180 by about 10 degrees
+    leftEncoder.setMotorPwm(0);
+    rightEncoder.setMotorPwm(0);
+    if(invertForward){
+        leftEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
+        rightEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
+    }else{
+        leftEncoder.move(steps, ((float)defaultSpeed/MAX_SPEED)*100);
+        rightEncoder.move(steps, ((float)defaultSpeed/MAX_SPEED)*100);
+    }
+
+    // wait until we reach the target
+    while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
+    {
+        UpdateMainDrive(); // updates positions
+        getAndUpdatePos(); // makes sure the robot knows where the line is
+    }
+
+    // Turn off PID mode
+    leftEncoder.setMotionMode(PWM_MODE);
+    rightEncoder.setMotionMode(PWM_MODE);
+    
+
+    // resume line
+    if (!lastIsStoped)
+        ResumeFollowing();
 }
 
 

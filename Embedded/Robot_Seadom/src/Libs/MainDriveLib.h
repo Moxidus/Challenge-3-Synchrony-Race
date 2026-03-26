@@ -47,6 +47,8 @@ public:
     void ResumeFollowing();
     void SetDefaultSpeed(int newSpeed);
     void Flip();
+    void MoveSteps(int steps);
+    void RotateSteps(int steps);
 };
 
 #endif
