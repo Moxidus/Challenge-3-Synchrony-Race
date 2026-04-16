@@ -181,12 +181,42 @@ void MainDrive::RotateSteps(int steps){
         ResumeFollowing();
 }
 
+void MainDrive::SetVelocity(float vel, float omega)
+{
+    // disable line following when using this function as it is used for manual control and line following would interfere with that, we can add a flag later to allow line following and velocity control at the same time but for now we will just disable line following when using this function
+    if (!isStopped)
+        StopFollowing();
+
+    // calulate left and right wheel speeds based on desired velocity and angular velocity, we will need to scale these values based on the max speed of the robot and the desired velocity and angular velocity
+    // we will also need to convert these values to PWM values between -255 and 255
+    float leftWheelV = vel - (omega/ (ADJUSTED_WHEEL_BASE* 2));
+    float rightWheelV = vel + (omega/ (ADJUSTED_WHEEL_BASE* 2));
+    leftWheelV = leftWheelV / WHEEL_RADIUS;
+    rightWheelV = rightWheelV / WHEEL_RADIUS;
+
+    // TODO: constrain to max values
+
+    float leftWheelPWM = (leftWheelV / MAX_SPEED) * defaultSpeed;
+    float rightWheelPWM = (rightWheelV / MAX_SPEED) * defaultSpeed;
+
+    Serial.println("Left wheel velocity: " + String(leftWheelV) + " Right wheel velocity: " + String(rightWheelV));
+
+
+    if(invertForward){
+        leftEncoder.setTarPWM(leftWheelPWM);
+        rightEncoder.setTarPWM(-rightWheelPWM);
+    }
+    else{
+        leftEncoder.setTarPWM(-leftWheelPWM);
+        rightEncoder.setTarPWM(rightWheelPWM);
+    }
+
+
+}
 
 // Function to move the robot in a certain direction with a given speed (-1.0 for full left, 1.0 for full right, 0 for straight)
 void MainDrive::moveDirection(float direction, uint8_t speed){
 
-    if(speed == NULL)
-        speed = defaultSpeed;
 
     if (softStartTimer + softStartDuration > millis()) {
         // During the soft start period, scale the speed based on elapsed time
@@ -302,13 +332,13 @@ void MainDrive::setupEncoders(){
 
     leftEncoder.setPulse(8);            // Encoder pulses per motor revolution (hardware-specific)
     leftEncoder.setRatio(46.67);        // Gear ratio used for position/speed calculations
-    leftEncoder.setSpeedPid(0.18,0,0);
     leftEncoder.setPosPid(1.8,0,1.2);   // Position PID gains (P, I, D) these values have been obtained from the generated mblock code
+    leftEncoder.setSpeedPid(0.18,0,0);
 
     rightEncoder.setPulse(8);            // Encoder pulses per motor revolution (hardware-specific)
     rightEncoder.setRatio(46.67);        // Gear ratio used for position/speed calculations
-    rightEncoder.setSpeedPid(0.18,0,0); 
     rightEncoder.setPosPid(1.8,0,1.2);   // Position PID gains (P, I, D) these values have been obtained from the generated mblock code
+    rightEncoder.setSpeedPid(0.18,0,0); 
 
 }
 
@@ -362,9 +392,9 @@ void MainDrive::updateOdometry()
   float d_l_meas = (deltaLeftAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
   float d_r_meas = (deltaRightAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
 
-  float v = 0.5 * (d_l_meas + d_r_meas);
+  float v = (d_l_meas + d_r_meas)/2;
   // TODO: If there is time fuse with gyro via a complementary filter
-  float omega = (d_r_meas-d_l_meas) / (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT); 
+  float omega = (d_r_meas-d_l_meas) / (ADJUSTED_WHEEL_BASE); 
 
   if (abs(omega) < 1e-6) // straight line approximation
   {

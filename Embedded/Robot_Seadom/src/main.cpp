@@ -7,6 +7,20 @@
 #include "Libs/LinearMotor.h"
 
 
+
+struct WayPoint {
+  float x;
+  float y;
+  float theta;
+};
+
+struct PalfaBeta {
+  float distance;
+  float alfa;
+  float beta;
+};
+
+
 #if defined(MOTHER_ROBOT) && defined(DAUGHTER_ROBOT)
 #error "Only one robot can be defined: MOTHER_ROBOT or DAUGHTER_ROBOT"
 #endif
@@ -33,6 +47,8 @@ bool invertForward = true;
 int executeCommand(String cmd);
 void HandleCommands();
 void setUpBluetooth();
+void MoveToPointUpdate();
+void startPointTracking(WayPoint targetPoint);
 
 
 unsigned long timeSinceStart = 0;
@@ -61,6 +77,7 @@ void loop()
 
   mainDrive.UpdateMainDrive();
   gripper.update();
+  MoveToPointUpdate();
 
 #ifdef MOTHER_ROBOT
   linearMotor.Update();
@@ -68,7 +85,7 @@ void loop()
 
 
   // testing remove after START --------------------------------------
-  // static bool hasMoved = false;
+  static bool hasMoved = false;
   // static bool hasFliped = false;
   // if (!hasFliped && mainDrive.globalX > 5000) // move after 6 seconds for testing
   // {
@@ -87,10 +104,10 @@ void loop()
 
   // if (!hasMoved && millis() - timeSinceStart > 6000) // move after 6 seconds for testing
   // {
-  //   // test left wheel distance traveled
-  //   // mainDrive.leftEncoder.move(-368);
-  //   // mainDrive.RotateSteps(475*10);
-  //   mainDrive.ResumeFollowing();
+  //   Serial.println("Moving forward");
+  //   // mainDrive.leftEncoder.setTarPWM(100);
+  //   mainDrive.leftEncoder.runSpeed(30);
+  //   mainDrive.rightEncoder.runSpeed(30);
 
   //   hasMoved = true;
   // }
@@ -201,6 +218,18 @@ int executeCommand(String cmd)
   {
     // TODO: Implement
   }
+  else if (cmd.startsWith("vel")) {
+    // Find the first space (after "vel")
+    int firstSpace = cmd.indexOf(' ');
+    // Find the second space (between v and omega)
+    int secondSpace = cmd.indexOf(' ', firstSpace + 1);
+
+    if (firstSpace != -1 && secondSpace != -1) {
+        float v = cmd.substring(firstSpace + 1, secondSpace).toFloat();
+        float omega = cmd.substring(secondSpace + 1).toFloat();
+        mainDrive.SetVelocity(v, omega);
+    }
+}
   else if (cmd.startsWith("point"))
   {
     int x, y;
@@ -235,12 +264,14 @@ int executeCommand(String cmd)
   }
   else if (cmd.startsWith("getpos"))
   {
+    // convert to json later
     Serial3.print("X: ");
     Serial3.print(mainDrive.globalX);
     Serial3.print(" Y: ");
     Serial3.print(mainDrive.globalY);
     Serial3.print(" Theta: ");
     Serial3.println(mainDrive.globalTheta);
+
   }
   else
   {
@@ -305,25 +336,15 @@ int executeCommand(String cmd)
 #define omegaMax 0.1 // rad/s
 
 
-struct WayPoint {
-  float x;
-  float y;
-  float theta;
-};
-
-struct PalfaBeta {
-  float distance;
-  float alfa;
-  float beta;
-};
-
 
 
 bool isTrackingPoint = false;
+WayPoint TargetPoint;
 
 void startPointTracking(WayPoint targetPoint)
 {
   isTrackingPoint = true;
+  TargetPoint = targetPoint;
 }
 
 
@@ -375,11 +396,12 @@ float getAngularVelocity(PalfaBeta pAlfaBeta){
     return kAlfa * pAlfaBeta.alfa + kBeta * pAlfaBeta.beta;
 }
 
-void MoveToPointUpdate(WayPoint targetPoint){
+void MoveToPointUpdate(){
+  if (!isTrackingPoint) return;
 
   WayPoint currentPos = {mainDrive.globalX, mainDrive.globalY, mainDrive.globalTheta};
 
-  WayPoint errorCoords = getError(currentPos, targetPoint);
+  WayPoint errorCoords = getError(currentPos, TargetPoint);
 
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
@@ -407,6 +429,9 @@ void MoveToPointUpdate(WayPoint targetPoint){
 
   vel = constrain(vel, -vMax, vMax) * max(0, cos(pAlfaBeta.alfa));  // Reduce velocity when not facing the target
   omega = constrain(omega, -omegaMax, omegaMax);
+
+  // Convert vel and omega to left and right wheel speeds
+  mainDrive.SetDefaultSpeed(255); // TODO: scale this based on vel and omega
 
 
 }

@@ -34,6 +34,7 @@
 #define WHEEL_RADIUS 32
 #define WHEEL_RADIUS_ADJUSTMENT 1.0 // this includes gear ration and encoder resolution
 #define WHEEL_BASE_ADJUSTMENT 1.0254454 // adjust this to make the robot turn the correct amount when it should
+#define ADJUSTED_WHEEL_BASE (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT)
 #define GEAR_RATIO 46.0 // adjust this to make the robot go the correct distance when it should
 #define ENCODER_RESOLUTION 8 // 8, 12 or 22 pulses check
 #define STEPS_PER_REVOLUTION (GEAR_RATIO * ENCODER_RESOLUTION)
@@ -105,6 +106,7 @@ public:
     void Flip();
     void MoveSteps(int steps);
     void RotateSteps(int steps);
+    void SetVelocity(float vel, float omega);
 };
 
 #endif
