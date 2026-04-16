@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "MeMegaPi.h"
 
+
 MainDrive* MainDrive::singletonInstance = nullptr;
 
 MainDrive::MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort)
@@ -36,6 +37,8 @@ void MainDrive::UpdateMainDrive(){
     leftEncoder.loop();
     rightEncoder.loop();
 
+    updateOdometry();
+    
     if (isStopped) // stops following if 
         return;
 
@@ -344,3 +347,50 @@ void MainDrive::handleRightEncoder(void)
     }
 }
 
+void MainDrive::updateOdometry()
+{
+  // get the distance traveled by each wheel since last update
+  long deltaLeft = (-leftEncoder.getCurPos()) - lastLeftEncoderPos;
+  long deltaRight = rightEncoder.getCurPos() - lastRightEncoderPos;
+
+  long deltaLeftAdjusted = deltaLeft * LEFT_ENCODER_SLIP_ADJUSTMENT;
+  long deltaRightAdjusted = deltaRight * RIGHT_ENCODER_SLIP_ADJUSTMENT;
+
+  lastLeftEncoderPos = -leftEncoder.getCurPos();
+  lastRightEncoderPos = rightEncoder.getCurPos();
+
+  float d_l_meas = (deltaLeftAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
+  float d_r_meas = (deltaRightAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
+
+  float v = 0.5 * (d_l_meas + d_r_meas);
+  // TODO: If there is time fuse with gyro via a complementary filter
+  float omega = (d_r_meas-d_l_meas) / (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT); 
+
+  if (abs(omega) < 1e-6) // straight line approximation
+  {
+    globalX += v * cos(globalTheta);
+    globalY += v * sin(globalTheta);
+  }
+  else
+  {
+    float R = v / omega;
+    float relX = R * sin(omega);
+    float relY = R * (1 - cos(omega));
+
+    // rotate to global frame before summing it up
+    globalX += relX * cos(globalTheta) - relY * sin(globalTheta);
+    globalY += relX * sin(globalTheta) + relY * cos(globalTheta);
+  }
+
+  globalTheta = wrap_angle(globalTheta + omega);
+}
+
+// wrap angle to [-pi, pi]
+float MainDrive::wrap_angle(float angle)
+{
+  while (angle > PI)
+    angle -= 2 * PI;
+  while (angle < -PI)
+    angle += 2 * PI;
+  return angle;
+}

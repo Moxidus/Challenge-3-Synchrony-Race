@@ -6,9 +6,6 @@
 #include "Libs/MainDriveLib.h"
 #include "Libs/LinearMotor.h"
 
-// SELECT ROBOT YOU ARE PROGRAMMING!!!
-// #define MOTHER_ROBOT
-#define DAUGHTER_ROBOT
 
 #if defined(MOTHER_ROBOT) && defined(DAUGHTER_ROBOT)
 #error "Only one robot can be defined: MOTHER_ROBOT or DAUGHTER_ROBOT"
@@ -21,11 +18,6 @@ float KP = 0.05;
 float KI = 0.001;
 float KD = 0.3;
 bool invertForward = false;
-// TODO: MEASURE THESE VALUES FOR THE MOTHER ROBOT and calibrate the adjustments to make it go straight and turn the correct amount when it should
-#define WHEEL_BASE 165
-#define WHEEL_RADIUS 32
-#define WHEEL_RADIUS_ADJUSTMENT 1.0 // adjust this to make the robot go straight when it should
-#define WHEEL_BASE_ADJUSTMENT 1.0 // adjust this to make the robot turn the correct amount when it should
 #endif
 
 #ifdef MOTHER_ROBOT
@@ -36,26 +28,14 @@ float KP = 0.3;
 float KI = 0.000;
 float KD = 0.2;
 bool invertForward = true;
-// TODO: MEASURE THESE VALUES FOR THE MOTHER ROBOT and calibrate the adjustments to make it go straight and turn the correct amount when it should
-#define WHEEL_BASE 165
-#define WHEEL_RADIUS 32
-#define WHEEL_RADIUS_ADJUSTMENT 1.0 // adjust this to make the robot go straight when it should
-#define WHEEL_BASE_ADJUSTMENT 1.0 // adjust this to make the robot turn the correct amount when it should
 #endif
 
 int executeCommand(String cmd);
 void HandleCommands();
 void setUpBluetooth();
-float wrap_angle(float angle);
-void updateOdometry();
 
-// Global frame
-float globalX = 0;
-float globalY = 0;
-float globalTheta = 0;
 
-long lastLeftEncoderPos = 0;
-long lastRightEncoderPos = 0;
+unsigned long timeSinceStart = 0;
 
 void setup()
 {
@@ -68,7 +48,12 @@ void setup()
 #ifdef MOTHER_ROBOT
   linearMotor.SetupLinearMotor();
 #endif
+
+  timeSinceStart = millis();
+
+
 }
+
 
 void loop()
 {
@@ -81,54 +66,68 @@ void loop()
   linearMotor.Update();
 #endif
 
-  updateOdometry();
+
+  // testing remove after START --------------------------------------
+  // static bool hasMoved = false;
+  // static bool hasFliped = false;
+  // if (!hasFliped && mainDrive.globalX > 5000) // move after 6 seconds for testing
+  // {
+  //   // test left wheel distance traveled
+  //   // mainDrive.leftEncoder.move(-368);
+  //   mainDrive.Flip();
+  //   hasFliped = true;
+  // }
+
+  // if (hasFliped && mainDrive.globalX < 1000){
+  //   // mainDrive.leftEncoder.move(-368);
+  //   mainDrive.Flip();
+  //   hasFliped = false;
+
+  // }
+
+  // if (!hasMoved && millis() - timeSinceStart > 6000) // move after 6 seconds for testing
+  // {
+  //   // test left wheel distance traveled
+  //   // mainDrive.leftEncoder.move(-368);
+  //   // mainDrive.RotateSteps(475*10);
+  //   mainDrive.ResumeFollowing();
+
+  //   hasMoved = true;
+  // }
+
+  // // if( millis() - timeSinceStart > 3000 && !hasMoved2) // move after 12 seconds for testing
+  // // {
+  // //   // test right wheel distance traveled
+  // //   // mainDrive.rightEncoder.move(368);
+  // //   mainDrive.RotateSteps(900);
+
+  // //   hasMoved2 = true;
+  // // }
+
+  // if ( millis() % 5000 < 20 ) // print odometry every second
+  // {
+  //   Serial3.print("X: ");
+  //   Serial3.print(mainDrive.globalX);
+  //   Serial3.print(" Y: ");
+  //   Serial3.print(mainDrive.globalY);
+  //   Serial3.print(" Theta: ");
+  //   Serial3.println(mainDrive.globalTheta);
+    
+  //   //Serial.println("left encoder: " + String(mainDrive.leftEncoder.getCurPos()) + " right encoder: " + String(mainDrive.rightEncoder.getCurPos()));
+  // }
+
+  
+
+
+  
+  // long deltaLeft = mainDrive.leftEncoder.getCurPos() - lastLeftEncoderPos;
+  // we check the actually distance and measured distance and calibrate the radius adjustment
+  
+  // testing remove after END -----------------------------------------
 
   delay(1); // TODO: fix pid loop to not need this delay
 }
 
-void updateOdometry()
-{
-  // get the distance traveled by each wheel since last update
-  long deltaLeft = mainDrive.leftEncoder.getCurPos() - lastLeftEncoderPos;
-  long deltaRight = mainDrive.rightEncoder.getCurPos() - lastRightEncoderPos;
-
-  lastLeftEncoderPos = mainDrive.leftEncoder.getCurPos();
-  lastRightEncoderPos = mainDrive.rightEncoder.getCurPos();
-
-  float d_l_meas = deltaLeft * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
-  float d_r_meas = deltaRight * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
-
-  float v = 0.5 * (d_l_meas + d_r_meas);
-  float omega = (d_r_meas - d_l_meas) / (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT);
-
-  if (abs(omega) < 1e-6) // straight line approximation
-  {
-    globalX += v * cos(globalTheta);
-    globalY += v * sin(globalTheta);
-  }
-  else
-  {
-    float R = v / omega;
-    float relX = R * sin(omega);
-    float relY = R * (1 - cos(omega));
-
-    // rotate to global frame
-    globalX += relX * cos(globalTheta) - relY * sin(globalTheta);
-    globalY += relY * cos(globalTheta) + relX * sin(globalTheta);
-  }
-
-  globalTheta = wrap_angle(globalTheta + omega);
-}
-
-// wrap angle to [-pi, pi]
-float wrap_angle(float angle)
-{
-  while (angle > PI)
-    angle -= 2 * PI;
-  while (angle < -PI)
-    angle += 2 * PI;
-  return angle;
-}
 
 void setUpBluetooth()
 {
@@ -227,6 +226,22 @@ int executeCommand(String cmd)
     int val = cmd.toInt();
     mainDrive.SetDefaultSpeed(val);
   }
+  else if (cmd.startsWith("getencoders"))
+  {
+    Serial3.print("Left Encoder: ");
+    Serial3.print(mainDrive.leftEncoder.getCurPos());
+    Serial3.print(" Right Encoder: ");
+    Serial3.println(mainDrive.rightEncoder.getCurPos());
+  }
+  else if (cmd.startsWith("getpos"))
+  {
+    Serial3.print("X: ");
+    Serial3.print(mainDrive.globalX);
+    Serial3.print(" Y: ");
+    Serial3.print(mainDrive.globalY);
+    Serial3.print(" Theta: ");
+    Serial3.println(mainDrive.globalTheta);
+  }
   else
   {
     Serial.println("Unknown command: " + cmd);
@@ -236,4 +251,162 @@ int executeCommand(String cmd)
   Serial.println("executed command: " + cmd);
 
   return 0;
+}
+
+
+
+/*
+
+    errorCoords = getError(robotInertialCoordinace, wayPoints[targetWayPointIndex])
+   
+    pAlfaBeta = getPAlfaBeta(errorCoords)
+
+    # print error with 2 decimal places
+    print(f"Error Coords: deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f}deg", end=' | ')
+    # print pAlfaBeta with 2 decimal places
+    print(f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f}deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f}deg" )
+
+
+
+    if pAlfaBeta[0] < 1.0 and abs(errorCoords[2]) < np.deg2rad(5):
+        targetWayPointIndex = (targetWayPointIndex + 1) % len(wayPoints)
+        waypointQuivers[targetWayPointIndex-1].set_color('green')
+        waypointQuivers[targetWayPointIndex].set_color('red')
+        print("Reached waypoint, moving to next:", targetWayPointIndex)
+        errorCoords = getError(robotInertialCoordinace, wayPoints[targetWayPointIndex])
+        pAlfaBeta = getPAlfaBeta(errorCoords)
+
+    # print float with 2 decimal places
+    print(f"deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f} deg", f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f} deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f} deg" )
+    
+
+    vel = getVelocity(pAlfaBeta)
+    omega = getAngularVelocity(pAlfaBeta)
+
+    
+    vel = np.clip(vel, -vMax, vMax) * max(0, np.cos(pAlfaBeta[1]))  # Reduce velocity when not facing the target
+    omega = np.clip(omega, -omegaMax, omegaMax)
+
+
+    robotInertialCoordinace[0] += np.cos(robotInertialCoordinace[2])*vel
+    robotInertialCoordinace[1] += np.sin(robotInertialCoordinace[2])*vel
+    robotInertialCoordinace[2] += omega
+    robotInertialCoordinace[2] = np.arctan2(np.sin(robotInertialCoordinace[2]), np.cos(robotInertialCoordinace[2])) # Normalize angle to [-pi, pi]
+
+
+
+*/
+
+#define kp (3.0 / 10)
+#define kAlfa (10.0 / 10)
+#define kBeta (-1.5 / 10)
+
+#define vMax 1.5 // m/s
+#define omegaMax 0.1 // rad/s
+
+
+struct WayPoint {
+  float x;
+  float y;
+  float theta;
+};
+
+struct PalfaBeta {
+  float distance;
+  float alfa;
+  float beta;
+};
+
+
+
+bool isTrackingPoint = false;
+
+void startPointTracking(WayPoint targetPoint)
+{
+  isTrackingPoint = true;
+}
+
+
+float deg2rad(float deg) {
+    return deg * (PI / 180.0);
+}
+
+WayPoint getError(WayPoint currentPose, WayPoint targetPose)
+{
+    // Translation: target relative to robot
+    float dx = targetPose.x - currentPose.x;
+    float dy = targetPose.y - currentPose.y;
+
+    float theta = currentPose.theta;
+
+    // Rotation into robot frame
+    float dx_r =  cos(theta) * dx + sin(theta) * dy;
+    float dy_r = -sin(theta) * dx + cos(theta) * dy;
+
+    // Orientation error
+    float dtheta = targetPose.theta - currentPose.theta;
+    dtheta = atan2(sin(dtheta), cos(dtheta));
+
+    WayPoint errorCoords = {dx_r, dy_r, dtheta};
+
+    return errorCoords;
+}
+
+PalfaBeta getPAlfaBeta(WayPoint errorCoords){
+  float distance = sqrt(errorCoords.x*errorCoords.x + errorCoords.y*errorCoords.y);
+
+  float alfa = atan2(errorCoords.y, errorCoords.x);
+  alfa = atan2(sin(alfa), cos(alfa)); // Normalize to [-pi, pi]
+  float beta = errorCoords.theta - alfa;
+  beta = atan2(sin(beta), cos(beta)); // Normalize to [-pi, pi]
+
+  PalfaBeta pAlfaBeta = {distance, alfa, beta};
+  return pAlfaBeta;
+}
+
+
+
+
+float getVelocity(PalfaBeta pAlfaBeta){
+    return kp * pAlfaBeta.distance;
+}
+
+float getAngularVelocity(PalfaBeta pAlfaBeta){
+    return kAlfa * pAlfaBeta.alfa + kBeta * pAlfaBeta.beta;
+}
+
+void MoveToPointUpdate(WayPoint targetPoint){
+
+  WayPoint currentPos = {mainDrive.globalX, mainDrive.globalY, mainDrive.globalTheta};
+
+  WayPoint errorCoords = getError(currentPos, targetPoint);
+
+  PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
+
+  //print error with 2 decimal places
+  // Serial.println(f"Error Coords: deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f}deg", end=' | ')
+  // // print pAlfaBeta with 2 decimal places
+  // Serial.println(f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f}deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f}deg" )
+
+
+
+  if(pAlfaBeta.distance < 1.0 && abs(errorCoords.theta) < deg2rad(5)){
+    Serial.println("Reached waypoint, stopping");
+    // mainDrive.StopFollowing();
+    isTrackingPoint = false;
+    return;
+  }
+
+  //print float with 2 decimal places
+  //print(f"deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f} deg", f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f} deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f} deg" )
+
+
+  float vel = getVelocity(pAlfaBeta);
+  float omega = getAngularVelocity(pAlfaBeta);
+
+
+  vel = constrain(vel, -vMax, vMax) * max(0, cos(pAlfaBeta.alfa));  // Reduce velocity when not facing the target
+  omega = constrain(omega, -omegaMax, omegaMax);
+
+
 }
