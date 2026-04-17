@@ -32,12 +32,12 @@ void MainDrive::SetupLineFollow(float kp, float ki, float kd, bool inverForward)
 }
 
 
-void MainDrive::UpdateMainDrive(float gyroZ){
+void MainDrive::UpdateMainDrive(){
 
     leftEncoder.loop();
     rightEncoder.loop();
 
-    updateOdometry(gyroZ);
+    updateOdometry();
     
     if (isStopped) // stops following if 
         return;
@@ -173,7 +173,7 @@ void MainDrive::RotateSteps(int degrees){
     // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
     {
-        UpdateMainDrive(0.0f); // updates positions
+        UpdateMainDrive(); // updates positions
         getAndUpdatePos(); // makes sure the robot knows where the line is
     }
 
@@ -305,7 +305,7 @@ void MainDrive::Flip(){
     // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
     {
-        UpdateMainDrive(0.0f); // updates positions
+        UpdateMainDrive(); // updates positions
         getAndUpdatePos(); // makes sure the robot knows where the line is
     }
 
@@ -384,7 +384,7 @@ void MainDrive::handleRightEncoder(void)
         rightEncoder.pulsePosPlus();  
     }
 }
-void MainDrive::updateOdometry(float gyroZ)
+void MainDrive::updateOdometry()
 {
     noInterrupts(); // Ensure atomic access to encoder counts
     long rawLeft  = leftEncoder.getCurPos();
@@ -401,10 +401,19 @@ void MainDrive::updateOdometry(float gyroZ)
     if (abs(deltaLeft) + abs(deltaRight) < 4)
         return;
 
+    /*
     static unsigned long lastOdTime = micros();
     unsigned long now = micros();
     float dt = (now - lastOdTime) / 1e6f;
     lastOdTime = now;
+
+    
+    check if this imporoves heading estimatio
+    float gyroDtheta = gyroZ * dt; // you'll need to track dt between calls
+
+    float alpha = 0.98; // trust gyro more for heading
+    float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
+    */
 
     lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);
     lastRightEncoderPos = (invertForward ? -rawRight : rawRight);
@@ -425,7 +434,6 @@ void MainDrive::updateOdometry(float gyroZ)
     else
     {
         float R    = v / dtheta;
-        float midTheta = globalTheta + dtheta * 0.5f; // midpoint integration (more accurate)
         globalX += R * (sin(globalTheta + dtheta) - sin(globalTheta));
         globalY += R * (cos(globalTheta) - cos(globalTheta + dtheta));
     }

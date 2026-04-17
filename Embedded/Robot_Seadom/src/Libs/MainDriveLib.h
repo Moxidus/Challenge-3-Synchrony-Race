@@ -78,7 +78,7 @@ private:
     void handleRightEncoder();
     void setupEncoders();
     void updateLineFollow();
-    void updateOdometry(float gyroZ);
+    void updateOdometry();
     float wrap_angle(float angle);
 public:
     static MainDrive* singletonInstance;
@@ -99,7 +99,7 @@ public:
 
     MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort);
     void SetupLineFollow(float kp = 0.05, float ki = 0.001, float kd = 0.3, bool inverForward = false);
-    void UpdateMainDrive(float gyroZ);
+    void UpdateMainDrive();
     void StopFollowing();
     void ResumeFollowing();
     void SetDefaultSpeed(int newSpeed);

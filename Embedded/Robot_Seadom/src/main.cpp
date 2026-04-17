@@ -81,7 +81,7 @@ void loop()
   gyro.update();
   HandleCommands();
 
-  mainDrive.UpdateMainDrive(0);
+  mainDrive.UpdateMainDrive();
   gripper.update();
   MoveToPointUpdate();
 
