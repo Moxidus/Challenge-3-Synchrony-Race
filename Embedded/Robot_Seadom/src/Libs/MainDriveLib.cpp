@@ -398,25 +398,16 @@ void MainDrive::updateOdometry()
 
     // TODO: TEST IF IT ACTUALLY WORKS
      // Only update when we have enough ticks to be meaningful
-    if (abs(deltaLeft) + abs(deltaRight) < 4)
-        return;
+    // if (abs(deltaLeft) + abs(deltaRight) < 4)
+    //     return;
 
-    /*
+    /**/
     static unsigned long lastOdTime = micros();
     unsigned long now = micros();
     float dt = (now - lastOdTime) / 1e6f;
     lastOdTime = now;
 
     
-    check if this imporoves heading estimatio
-    float gyroDtheta = gyroZ * dt; // you'll need to track dt between calls
-
-    float alpha = 0.98; // trust gyro more for heading
-    float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
-    */
-
-    lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);
-    lastRightEncoderPos = (invertForward ? -rawRight : rawRight);
 
     // Use a SINGLE shared slip/scale constant until properly calibrated
     // Asymmetric constants bake a permanent curve into straight lines
@@ -424,21 +415,33 @@ void MainDrive::updateOdometry()
     float d_r = (deltaRight / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
 
     float v         = (d_l + d_r) * 0.5f;
-    float dtheta    = (d_r - d_l) / ADJUSTED_WHEEL_BASE;
+    float encoderDtheta    = (d_r - d_l) / ADJUSTED_WHEEL_BASE;
 
-    if (abs(dtheta) < 1e-4f)  // straight line — arc formula unstable here
+
+    
+    //check if this imporoves heading estimatio
+    float gyroDtheta = gyroZ*DEG_TO_RAD * dt; // you'll need to track dt between calls
+
+    float alpha = 0.98; // trust gyro more for heading
+    float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
+    
+
+    lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);
+    lastRightEncoderPos = (invertForward ? -rawRight : rawRight);
+
+    if (abs(fusedDtheta) < 1e-5f)  // straight line — arc formula unstable here
     {
         globalX += v * cos(globalTheta);
         globalY += v * sin(globalTheta);
     }
     else
     {
-        float R    = v / dtheta;
-        globalX += R * (sin(globalTheta + dtheta) - sin(globalTheta));
-        globalY += R * (cos(globalTheta) - cos(globalTheta + dtheta));
+        float R    = v / fusedDtheta;
+        globalX += R * (sin(globalTheta + fusedDtheta) - sin(globalTheta));
+        globalY += R * (cos(globalTheta) - cos(globalTheta + fusedDtheta));
     }
 
-    globalTheta = wrap_angle(globalTheta + dtheta);
+    globalTheta = wrap_angle(globalTheta + fusedDtheta);
 }
 
 // wrap angle to [-pi, pi]

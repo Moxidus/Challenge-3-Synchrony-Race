@@ -1,7 +1,7 @@
 import asyncio
 from bleak import BleakClient, BleakScanner
  
-DEVICE_NAME = "Makeblock-LE001b1069005f"
+DEVICE_NAME = "Makeblock_LE001b1069005f"
 RX_UUID = "0000ffe2-0000-1000-8000-00805f9b34fb"  # notify/read incoming
 TX_UUID = "0000ffe3-0000-1000-8000-00805f9b34fb"  # write outgoing
  

@@ -28,7 +28,7 @@ struct PalfaBeta {
 #ifdef DAUGHTER_ROBOT
 Gripper gripper(PORT4A);
 MainDrive mainDrive(6, SLOT1, SLOT2);
-MeGyro gyro(PORT6);
+MeGyro gyro(PORT7);
 float KP = 0.05;
 float KI = 0.001;
 float KD = 0.3;
@@ -37,8 +37,9 @@ bool invertForward = false;
 
 #ifdef MOTHER_ROBOT
 Gripper gripper(PORT3A);
-MainDrive mainDrive(6, SLOT2, SLOT1);
-LinearMotor linearMotor(SLOT4);
+MainDrive mainDrive(6, SLOT4, SLOT2);
+LinearMotor linearMotor(SLOT1);
+MeGyro gyro(PORT6);
 float KP = 0.3;
 float KI = 0.000;
 float KD = 0.2;
@@ -62,12 +63,17 @@ void setup()
   mainDrive.SetupLineFollow(KP, KI, KD, invertForward);
   mainDrive.StopFollowing();
 
+  // mother ship only setup
 #ifdef MOTHER_ROBOT
   linearMotor.SetupLinearMotor();
 #endif
 
+// Daughter ship only setup
+#ifdef DAUGHTER_ROBOT
+#endif
 
-   gyro.begin();
+
+  gyro.begin();
 
   timeSinceStart = millis();
 
@@ -78,12 +84,19 @@ void setup()
 void loop()
 {
   
+#ifdef DAUGHTER_ROBOT
+#endif
+
+
   gyro.update();
   HandleCommands();
 
+  mainDrive.gyroZ  = gyro.getGyroZ();
   mainDrive.UpdateMainDrive();
   gripper.update();
   MoveToPointUpdate();
+
+
 
 #ifdef MOTHER_ROBOT
   linearMotor.Update();
@@ -91,7 +104,7 @@ void loop()
 
 
   // testing remove after START --------------------------------------
-  static bool hasMoved = false;
+  // static bool hasMoved = false;
   // static bool hasFliped = false;
   // if (!hasFliped && mainDrive.globalX > 5000) // move after 6 seconds for testing
   // {
@@ -127,9 +140,9 @@ void loop()
   // //   hasMoved2 = true;
   // // }
 
-  if ( millis() % 5000 < 20 ) // print odometry every second
-  {
-  }
+  // if ( millis() % 5000 < 20 ) // print odometry every second
+  // {
+  // }
 
   
     // // print gyro stats
@@ -209,6 +222,12 @@ int executeCommand(String cmd)
   else if (cmd == "lin down")
   {
     linearMotor.MoveDown();
+  }
+  else if (cmd.startsWith("linmove "))
+  {
+    cmd.replace("linmove ", "");
+    int val = cmd.toInt();
+    linearMotor.move(val);
   }
 #endif
   else if (cmd == "celebrate")

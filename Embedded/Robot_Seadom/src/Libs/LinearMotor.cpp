@@ -34,9 +34,14 @@ void LinearMotor::MoveHome() {
     // _delay(1);
 }
 
+void LinearMotor::move(int steps)
+{
+    encoderMotor.moveTo(steps);
+}
+
 void LinearMotor::MoveDown() {
     
-    encoderMotor.moveTo(2000);
+    encoderMotor.moveTo(1300);
 
     // CONFIGURE IF WE NEED AWAIT
     // while (!Encoder_1.isTarPosReached())

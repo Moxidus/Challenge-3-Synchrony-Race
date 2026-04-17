@@ -17,7 +17,7 @@ public:
     void SetupLinearMotor();
     void MoveDown();
     void MoveHome();
-    void SetHome();
+    void move(int steps);
 
 private:
     MeEncoderOnBoard encoderMotor;

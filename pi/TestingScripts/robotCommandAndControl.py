@@ -10,7 +10,8 @@ from collections import deque
 import time
 
 # --- Configuration ---
-DEVICE_NAME = "Makeblock_LE001b1068770a"
+# DEVICE_NAME = "Makeblock_LE001b1068770a" # daughter ship
+DEVICE_NAME = "Makeblock_LE001b1069005f" # mother ship
 RX_UUID = "0000ffe2-0000-1000-8000-00805f9b34fb"
 TX_UUID = "0000ffe3-0000-1000-8000-00805f9b34fb"
 
