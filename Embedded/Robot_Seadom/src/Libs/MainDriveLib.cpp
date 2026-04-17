@@ -32,12 +32,12 @@ void MainDrive::SetupLineFollow(float kp, float ki, float kd, bool inverForward)
 }
 
 
-void MainDrive::UpdateMainDrive(){
+void MainDrive::UpdateMainDrive(float gyroZ){
 
     leftEncoder.loop();
     rightEncoder.loop();
 
-    updateOdometry();
+    updateOdometry(gyroZ);
     
     if (isStopped) // stops following if 
         return;
@@ -76,7 +76,7 @@ void MainDrive::updateLineFollow(){
     pid = constrain(pid, -1.0, 1.0);
 
     
-    moveDirection(pid);
+    moveDirection(pid, defaultSpeed);
 
 }
 
@@ -94,7 +94,9 @@ void MainDrive::StopFollowing(){
 
 void MainDrive::ResumeFollowing(){
     isStopped = false;
-    moveDirection(0);
+    leftEncoder.setMotionMode(PWM_MODE);
+    rightEncoder.setMotionMode(PWM_MODE);
+    moveDirection(0, defaultSpeed);
 }
 
 void MainDrive::SetDefaultSpeed(int newSpeed){
@@ -140,7 +142,7 @@ void MainDrive::MoveSteps(int steps){
 }
 
 
-void MainDrive::RotateSteps(int steps){
+void MainDrive::RotateSteps(int degrees){
     bool lastIsStoped = isStopped;
     StopFollowing();
 
@@ -156,6 +158,10 @@ void MainDrive::RotateSteps(int steps){
     // overshoot 180 by about 10 degrees
     leftEncoder.setMotorPwm(0);
     rightEncoder.setMotorPwm(0);
+
+    // conver degrees to steps
+    int steps = (int)((degrees/360.0) * (PI * ADJUSTED_WHEEL_BASE) / (2 * PI * WHEEL_RADIUS) * STEPS_PER_REVOLUTION); // 8 pulses per revolution and 46.67 gear ratio
+
     if(invertForward){
         leftEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
         rightEncoder.move(-steps, ((float)defaultSpeed/MAX_SPEED)*100);
@@ -167,7 +173,7 @@ void MainDrive::RotateSteps(int steps){
     // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
     {
-        UpdateMainDrive(); // updates positions
+        UpdateMainDrive(0.0f); // updates positions
         getAndUpdatePos(); // makes sure the robot knows where the line is
     }
 
@@ -189,8 +195,8 @@ void MainDrive::SetVelocity(float vel, float omega)
 
     // calulate left and right wheel speeds based on desired velocity and angular velocity, we will need to scale these values based on the max speed of the robot and the desired velocity and angular velocity
     // we will also need to convert these values to PWM values between -255 and 255
-    float leftWheelV = vel - (omega/ (ADJUSTED_WHEEL_BASE* 2));
-    float rightWheelV = vel + (omega/ (ADJUSTED_WHEEL_BASE* 2));
+    float leftWheelV = vel - (omega/ (ADJUSTED_WHEEL_BASE* 2))*1000;
+    float rightWheelV = vel + (omega/ (ADJUSTED_WHEEL_BASE* 2))*1000;
     leftWheelV = leftWheelV / WHEEL_RADIUS;
     rightWheelV = rightWheelV / WHEEL_RADIUS;
 
@@ -238,6 +244,8 @@ void MainDrive::moveDirection(float direction, uint8_t speed){
     // Motor PWM values should be between -255 and 255
     leftPWM = constrain(leftPWM, 0, MAX_SPEED);
     rightPWM = constrain(rightPWM, 0, MAX_SPEED);
+
+    Serial.println("Direction: " + String(direction) + " Speed: " + String(speed) + " Left PWM: " + String(leftPWM) + " Right PWM: " + String(rightPWM));
 
     if(invertForward){
         leftEncoder.setMotorPwm(leftPWM);
@@ -297,7 +305,7 @@ void MainDrive::Flip(){
     // wait until we reach the target
     while (!(leftEncoder.isTarPosReached() && rightEncoder.isTarPosReached()))
     {
-        UpdateMainDrive(); // updates positions
+        UpdateMainDrive(0.0f); // updates positions
         getAndUpdatePos(); // makes sure the robot knows where the line is
     }
 
@@ -376,43 +384,53 @@ void MainDrive::handleRightEncoder(void)
         rightEncoder.pulsePosPlus();  
     }
 }
-
-void MainDrive::updateOdometry()
+void MainDrive::updateOdometry(float gyroZ)
 {
-  // get the distance traveled by each wheel since last update
-  long deltaLeft = (-leftEncoder.getCurPos()) - lastLeftEncoderPos;
-  long deltaRight = rightEncoder.getCurPos() - lastRightEncoderPos;
+    noInterrupts(); // Ensure atomic access to encoder counts
+    long rawLeft  = leftEncoder.getCurPos();
+    long rawRight = rightEncoder.getCurPos();
+    interrupts(); // Re-enable interrupts
 
-  long deltaLeftAdjusted = deltaLeft * LEFT_ENCODER_SLIP_ADJUSTMENT;
-  long deltaRightAdjusted = deltaRight * RIGHT_ENCODER_SLIP_ADJUSTMENT;
+    // Adjust signs so that forward motion gives positive delta on both wheels
+    // Verify: drive forward manually, confirm both deltas positive
+    long deltaLeft  = (invertForward ?  rawLeft : -rawLeft) - lastLeftEncoderPos;
+    long deltaRight = (invertForward ? -rawRight : rawRight) - lastRightEncoderPos;
 
-  lastLeftEncoderPos = -leftEncoder.getCurPos();
-  lastRightEncoderPos = rightEncoder.getCurPos();
+    // TODO: TEST IF IT ACTUALLY WORKS
+     // Only update when we have enough ticks to be meaningful
+    if (abs(deltaLeft) + abs(deltaRight) < 4)
+        return;
 
-  float d_l_meas = (deltaLeftAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
-  float d_r_meas = (deltaRightAdjusted / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
+    static unsigned long lastOdTime = micros();
+    unsigned long now = micros();
+    float dt = (now - lastOdTime) / 1e6f;
+    lastOdTime = now;
 
-  float v = (d_l_meas + d_r_meas)/2;
-  // TODO: If there is time fuse with gyro via a complementary filter
-  float omega = (d_r_meas-d_l_meas) / (ADJUSTED_WHEEL_BASE); 
+    lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);
+    lastRightEncoderPos = (invertForward ? -rawRight : rawRight);
 
-  if (abs(omega) < 1e-6) // straight line approximation
-  {
-    globalX += v * cos(globalTheta);
-    globalY += v * sin(globalTheta);
-  }
-  else
-  {
-    float R = v / omega;
-    float relX = R * sin(omega);
-    float relY = R * (1 - cos(omega));
+    // Use a SINGLE shared slip/scale constant until properly calibrated
+    // Asymmetric constants bake a permanent curve into straight lines
+    float d_l = (deltaLeft  / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
+    float d_r = (deltaRight / STEPS_PER_REVOLUTION) * 2 * PI * WHEEL_RADIUS * WHEEL_RADIUS_ADJUSTMENT;
 
-    // rotate to global frame before summing it up
-    globalX += relX * cos(globalTheta) - relY * sin(globalTheta);
-    globalY += relX * sin(globalTheta) + relY * cos(globalTheta);
-  }
+    float v         = (d_l + d_r) * 0.5f;
+    float dtheta    = (d_r - d_l) / ADJUSTED_WHEEL_BASE;
 
-  globalTheta = wrap_angle(globalTheta + omega);
+    if (abs(dtheta) < 1e-4f)  // straight line — arc formula unstable here
+    {
+        globalX += v * cos(globalTheta);
+        globalY += v * sin(globalTheta);
+    }
+    else
+    {
+        float R    = v / dtheta;
+        float midTheta = globalTheta + dtheta * 0.5f; // midpoint integration (more accurate)
+        globalX += R * (sin(globalTheta + dtheta) - sin(globalTheta));
+        globalY += R * (cos(globalTheta) - cos(globalTheta + dtheta));
+    }
+
+    globalTheta = wrap_angle(globalTheta + dtheta);
 }
 
 // wrap angle to [-pi, pi]

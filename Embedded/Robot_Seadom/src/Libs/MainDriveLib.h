@@ -33,9 +33,9 @@
 #define WHEEL_BASE 165
 #define WHEEL_RADIUS 32
 #define WHEEL_RADIUS_ADJUSTMENT 1.0 // this includes gear ration and encoder resolution
-#define WHEEL_BASE_ADJUSTMENT 1.0254454 // adjust this to make the robot turn the correct amount when it should
+#define WHEEL_BASE_ADJUSTMENT 0.9568421053  // adjust this to make the robot turn the correct amount when it should
 #define ADJUSTED_WHEEL_BASE (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT)
-#define GEAR_RATIO 46.0 // adjust this to make the robot go the correct distance when it should
+#define GEAR_RATIO 46.67 // adjust this to make the robot go the correct distance when it should
 #define ENCODER_RESOLUTION 8 // 8, 12 or 22 pulses check
 #define STEPS_PER_REVOLUTION (GEAR_RATIO * ENCODER_RESOLUTION)
 #define LEFT_ENCODER_SLIP_ADJUSTMENT 1.0 // adjust this to make the robot go straight when it should
@@ -73,12 +73,12 @@ private:
 
 
     int getAndUpdatePos();
-    void moveDirection(float direction, uint8_t speed = NULL);
+    void moveDirection(float direction, uint8_t speed);
     void handleLeftEncoder();
     void handleRightEncoder();
     void setupEncoders();
     void updateLineFollow();
-    void updateOdometry();
+    void updateOdometry(float gyroZ);
     float wrap_angle(float angle);
 public:
     static MainDrive* singletonInstance;
@@ -99,13 +99,13 @@ public:
 
     MainDrive(uint8_t lineSensorPort, uint8_t leftEncoderPort, uint8_t rightEncoderPort);
     void SetupLineFollow(float kp = 0.05, float ki = 0.001, float kd = 0.3, bool inverForward = false);
-    void UpdateMainDrive();
+    void UpdateMainDrive(float gyroZ);
     void StopFollowing();
     void ResumeFollowing();
     void SetDefaultSpeed(int newSpeed);
     void Flip();
     void MoveSteps(int steps);
-    void RotateSteps(int steps);
+    void RotateSteps(int degrees);
     void SetVelocity(float vel, float omega);
 };
 

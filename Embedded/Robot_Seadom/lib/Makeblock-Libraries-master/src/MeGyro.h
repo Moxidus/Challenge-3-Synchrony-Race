@@ -274,6 +274,7 @@ public:
  *   None
  */
   double getGyroX(void) const;
+  double getGyroZ(void) const;
 
 /**
  * \par Function

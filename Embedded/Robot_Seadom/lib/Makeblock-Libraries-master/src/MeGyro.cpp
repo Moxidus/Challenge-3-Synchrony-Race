@@ -436,6 +436,11 @@ double MeGyro::getGyroY(void) const
   return gyrY;
 }
 
+double MeGyro::getGyroZ(void) const
+{
+  return gyrZ;
+}
+
 /**
  * \par Function
  *   getAngle

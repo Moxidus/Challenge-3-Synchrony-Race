@@ -28,6 +28,7 @@ struct PalfaBeta {
 #ifdef DAUGHTER_ROBOT
 Gripper gripper(PORT4A);
 MainDrive mainDrive(6, SLOT1, SLOT2);
+MeGyro gyro(PORT6);
 float KP = 0.05;
 float KI = 0.001;
 float KD = 0.3;
@@ -65,6 +66,9 @@ void setup()
   linearMotor.SetupLinearMotor();
 #endif
 
+
+   gyro.begin();
+
   timeSinceStart = millis();
 
 
@@ -73,9 +77,11 @@ void setup()
 
 void loop()
 {
+  
+  gyro.update();
   HandleCommands();
 
-  mainDrive.UpdateMainDrive();
+  mainDrive.UpdateMainDrive(0);
   gripper.update();
   MoveToPointUpdate();
 
@@ -121,19 +127,18 @@ void loop()
   // //   hasMoved2 = true;
   // // }
 
-  // if ( millis() % 5000 < 20 ) // print odometry every second
-  // {
-  //   Serial3.print("X: ");
-  //   Serial3.print(mainDrive.globalX);
-  //   Serial3.print(" Y: ");
-  //   Serial3.print(mainDrive.globalY);
-  //   Serial3.print(" Theta: ");
-  //   Serial3.println(mainDrive.globalTheta);
-    
-  //   //Serial.println("left encoder: " + String(mainDrive.leftEncoder.getCurPos()) + " right encoder: " + String(mainDrive.rightEncoder.getCurPos()));
-  // }
+  if ( millis() % 5000 < 20 ) // print odometry every second
+  {
+  }
 
   
+    // // print gyro stats
+    // Serial.print("Gyro: ");
+    // Serial.print(gyro.getGyroX());
+    // Serial.print(",\t");
+    // Serial.print(gyro.getGyroY());
+    // Serial.print(",\t");
+    // Serial.println(gyro.getGyroZ());
 
 
   
@@ -210,10 +215,32 @@ int executeCommand(String cmd)
   {
     // TODO: Implement Celebration
   }
-  else if (cmd == "start point")
-  {
-    // TODO: Implement
-  }
+  else if (cmd.startsWith("start point")) 
+{
+    // The command is "start point x y thata"
+    // Find the space after 'point'
+    int space1 = cmd.indexOf(' ', 7); // Start search after "start "
+    int space2 = cmd.indexOf(' ', space1 + 1);
+    int space3 = cmd.indexOf(' ', space2 + 1);
+
+    Serial.println("Received start point command: " + cmd.substring(space2 + 1, space3) + " " + cmd.substring(space3 + 1) + " " + cmd.substring(space1 + 1, space2));
+
+    if (space1 != -1 && space2 != -1 && space3 != -1) {
+        float x = cmd.substring(space1 + 1, space2).toFloat();
+        float y = cmd.substring(space2 + 1, space3).toFloat();
+        float theta = cmd.substring(space3 + 1).toFloat();
+
+        Serial.print("Start Point Set: ");
+        Serial.print(x); Serial.print(", ");
+        Serial.print(y); Serial.print(", ");
+        Serial.println(theta);
+
+        // Now you can use x, y, and theta to set the starting point for your navigation
+         startPointTracking({x, y, theta});
+        
+        // Example: myNavigator.SetStart(x, y, z);
+    }
+}
   else if (cmd == "stop point")
   {
     // TODO: Implement
@@ -270,8 +297,14 @@ int executeCommand(String cmd)
     Serial3.print(" Y: ");
     Serial3.print(mainDrive.globalY);
     Serial3.print(" Theta: ");
-    Serial3.println(mainDrive.globalTheta);
+    Serial3.println(mainDrive.globalTheta/ PI * 180);
 
+  }
+  else if (cmd.startsWith("resetpos"))
+  {
+    mainDrive.globalX = 0;
+    mainDrive.globalY = 0;
+    mainDrive.globalTheta = 0;
   }
   else
   {
@@ -343,6 +376,8 @@ WayPoint TargetPoint;
 
 void startPointTracking(WayPoint targetPoint)
 {
+  
+  Serial.println("Target Pose: (" + String(TargetPoint.x) + ", " + String(TargetPoint.y) + ", " + String(TargetPoint.theta) + ")");
   isTrackingPoint = true;
   TargetPoint = targetPoint;
 }
@@ -354,6 +389,7 @@ float deg2rad(float deg) {
 
 WayPoint getError(WayPoint currentPose, WayPoint targetPose)
 {
+
     // Translation: target relative to robot
     float dx = targetPose.x - currentPose.x;
     float dy = targetPose.y - currentPose.y;
@@ -400,38 +436,32 @@ void MoveToPointUpdate(){
   if (!isTrackingPoint) return;
 
   WayPoint currentPos = {mainDrive.globalX, mainDrive.globalY, mainDrive.globalTheta};
-
   WayPoint errorCoords = getError(currentPos, TargetPoint);
-
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
-  //print error with 2 decimal places
-  // Serial.println(f"Error Coords: deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f}deg", end=' | ')
-  // // print pAlfaBeta with 2 decimal places
-  // Serial.println(f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f}deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f}deg" )
+  // --- Thresholds (tune these) ---
+  const float distThresh  = 200.0f;   // mm
+  const float thetaThresh = deg2rad(8.0f);
+  const float alfaDeadzone = 150.0f;  // mm — stop steering by alfa when this close
 
-
-
-  if(pAlfaBeta.distance < 1.0 && abs(errorCoords.theta) < deg2rad(5)){
+  if (pAlfaBeta.distance < distThresh && abs(errorCoords.theta) < thetaThresh) {
     Serial.println("Reached waypoint, stopping");
-    // mainDrive.StopFollowing();
+    mainDrive.StopFollowing();
+    mainDrive.SetVelocity(0, 0);
     isTrackingPoint = false;
     return;
   }
 
-  //print float with 2 decimal places
-  //print(f"deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f} deg", f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f} deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f} deg" )
-
-
-  float vel = getVelocity(pAlfaBeta);
+  float vel   = getVelocity(pAlfaBeta);
   float omega = getAngularVelocity(pAlfaBeta);
 
+  // Kill alfa steering when very close — only correct final heading
+  if (pAlfaBeta.distance < alfaDeadzone) {
+    omega = kBeta * errorCoords.theta;  
+  }
 
-  vel = constrain(vel, -vMax, vMax) * max(0, cos(pAlfaBeta.alfa));  // Reduce velocity when not facing the target
+  vel   = constrain(vel,   -vMax, vMax)   * max(0.0f, cos(pAlfaBeta.alfa));
   omega = constrain(omega, -omegaMax, omegaMax);
 
-  // Convert vel and omega to left and right wheel speeds
-  mainDrive.SetDefaultSpeed(255); // TODO: scale this based on vel and omega
-
-
+  mainDrive.SetVelocity(vel * 5000.0f, omega * 5000.0f);
 }
