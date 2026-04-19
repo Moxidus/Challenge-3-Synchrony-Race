@@ -76,4 +76,10 @@ class UsbCommunication:
         # This method should be called whenever new data is received from the serial connection
         self.responseBuffer.append(data)
 
-    
+
+# testing code
+if __name__ == "__main__":
+    usbComm = UsbCommunication()
+    usbComm._handle_incoming_data("TEST_COMMAND ARG1 ARG2")
+    print(usbComm.get_last_response()) # should print "TEST_COMMAND ARG1 ARG2"
+    asyncio.run(usbComm.wait_for_command("TEST_COMMAND")) # should return True
