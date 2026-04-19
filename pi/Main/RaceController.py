@@ -16,6 +16,11 @@ from BleCommunication import BleCommunication
 from ArucoTracking import ArucoTracking
 
 
+# configuration parameters
+# camera location relative to the center of the robot (x, y, z) in meters
+camera_location = [ 0.0, 0.0, 0.0]
+gripper_location = [ 0.0, 0.0, 0.0]
+
 
 
 

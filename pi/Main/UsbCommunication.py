@@ -25,6 +25,10 @@
 # "linmove <val>"         - [Dumpster Truck] Moves linear motor to specific position
 
 
+import time
+
+
+
 class UsbCommunication:
     def __init__(self):
         # Initialize USB communication parameters and variables
@@ -46,7 +50,28 @@ class UsbCommunication:
         # Get the last response received from the Dumpster Truck (DT) over USB serial
         pass
 
+    
+    def wait_for_command(self, command, timeout = 0):
+        "default timeout is 10000 seconds"
+        if timeout == 0:
+            timeout = 10000
+
+        startTime = time.time()
+
+        while time.time() - startTime > timeout:
+            if not any(self.responseBuffer):
+                continue
+            
+            lastCommand = self.responseBuffer.pop()
+            if lastCommand == command:
+                return True
+            
+        return False # timeout
+
+    
     def _handle_incoming_data(self, data):
         # Internal method to handle incoming data from the Dumpster Truck (DT) over USB serial
         # This method should be called whenever new data is received from the serial connection
         self.responseBuffer.append(data)
+
+    
