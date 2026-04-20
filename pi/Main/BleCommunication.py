@@ -1,80 +1,71 @@
-# BLE Communication Module for Dumpster Truck (DT)
-# This module will handle all BLE communication with the Dumpster Truck (DT). It will be responsible for sending commands to DT and receiving status updates from DT.
+# BLE Communication Module for Fire Truck (FT) == Daughtership?
+# This module will handle all BLE communication with the Firer Truck (FT). It will be responsible for sending commands to FT and receiving status updates from DT and FT.
 
 import asyncio
 import time
 from bleak import BleakClient, BleakScanner
  
-DEVICE_NAME = "Makeblock_LE001b1068770a"
+DEVICE_NAME = "Makeblock_LE001b1068770a"   # DaughterShip BLE adress
 RX_UUID = "0000ffe2-0000-1000-8000-00805f9b34fb"  # notify/read incoming
 TX_UUID = "0000ffe3-0000-1000-8000-00805f9b34fb"  # write outgoing
  
+write_lock = asyncio.Lock()
 
+def on_message(sender, data: bytearray):
+    text = data.decode("utf-8", errors="replace").strip()
+    print(f"\nRX> {text}")
+ 
+async def safe_write(client: BleakClient, message: str):
+    async with write_lock:
+        payload = (message + "\n").encode("utf-8")
+ 
+        # Try write-with-response first because it prevents overlapping writes better.
+        # If the characteristic does not support it, fall back to write-without-response.
+        try:
+            await client.write_gatt_char(TX_UUID, payload, response=True)
+        except Exception:
+            await client.write_gatt_char(TX_UUID, payload, response=False)
+            await asyncio.sleep(0.15)
+         
 class BleCommunication:
     def __init__(self):
-        # Initialize BLE communication parameters and variables
-        self.responseBuffer = []
         self.client = None
+        self.responseBuffer = []
 
-    def connect(self):
-        # Establish USB serial connection with the Dumpster Truck (DT)
-        pass
+    def _on_message(self, sender, data: bytearray):
+        text = data.decode("utf-8", errors="replace").strip()
+        print(f"\nRX> {text}")
+        self._handle_incoming_data(text)
 
-    def disconnect(self):
-        # Disconnect USB serial connection with the Dumpster Truck (DT)
-        pass
+    async def connect(self): 
+        print(f"Scanning for {DEVICE_NAME!r}...")
+        device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=10.0)
+        if not device:
+            print("Device not found")
+            return False
+        self.client = BleakClient(device)
+        await self.client.connect()
+        await self.client.start_notify(RX_UUID, self._on_message)
+        print("Connected:", self.client.is_connected)
+        return True
 
-    def send_command(self, command):
-        # Send a command to the Dumpster Truck (DT) over USB serial
-        pass
+    async def disconnect(self):
+        try:
+            await self.client.stop_notify(RX_UUID)
+            await self.client.disconnect()
+        except Exception:
+            pass
 
-    def get_last_response(self):
-        # Get the last response received from the Dumpster Truck (DT) over USB serial
-        if not any(self.responseBuffer):
-            return None
-        
-        return self.responseBuffer.pop()
-
-    
-    async def wait_for_command(self, command, timeout = 0):
-        "default timeout is 10000 seconds"
-        if timeout == 0:
-            timeout = 10000
-
-        startTime = time.time()
-
-        while time.time() - startTime < timeout:
-            if not any(self.responseBuffer):
-                await asyncio.sleep(0.1)
-                continue
-            
-            lastCommand = self.get_last_response()
-            if lastCommand == command:
-                return True
-            
-        return False # timeout
-    
-        
-    
-    async def wait_for_response(self, command, timeout = 0):
-        "default timeout is 10000 seconds"
-        if timeout == 0:
-            timeout = 10000
-
-        startTime = time.time()
-
-        while time.time() - startTime < timeout:
-            if not any(self.responseBuffer):
-                await asyncio.sleep(0.1)
-                continue
-            
-            lastCommand = self.get_last_response()
-            if lastCommand == command:
-                args = lastCommand.replace(command + " ")
-                return (True, args)
-            
-        return (False, None) # timeout
-
+    async def send_command(self, command):
+        try:
+            await safe_write(self.client, command)
+        except Exception as e:
+            print("Write failed:", repr(e))
 
     def _handle_incoming_data(self, data):
         self.responseBuffer.append(data)
+
+    def get_last_response(self):
+        if not self.responseBuffer:
+            return None
+        return self.responseBuffer.pop(0)  # FIFO
