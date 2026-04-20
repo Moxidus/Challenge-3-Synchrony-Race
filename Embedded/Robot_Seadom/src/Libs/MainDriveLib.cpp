@@ -189,35 +189,31 @@ void MainDrive::RotateSteps(int degrees){
 
 void MainDrive::SetVelocity(float vel, float omega)
 {
-    // disable line following when using this function as it is used for manual control and line following would interfere with that, we can add a flag later to allow line following and velocity control at the same time but for now we will just disable line following when using this function
-    if (!isStopped)
-        StopFollowing();
 
-    // calulate left and right wheel speeds based on desired velocity and angular velocity, we will need to scale these values based on the max speed of the robot and the desired velocity and angular velocity
-    // we will also need to convert these values to PWM values between -255 and 255
-    float leftWheelV = vel - (omega/ (ADJUSTED_WHEEL_BASE* 2))*1000;
-    float rightWheelV = vel + (omega/ (ADJUSTED_WHEEL_BASE* 2))*1000;
-    leftWheelV = leftWheelV / WHEEL_RADIUS;
-    rightWheelV = rightWheelV / WHEEL_RADIUS;
+    if (!isStopped) StopFollowing();
 
-    // TODO: constrain to max values
+    // Differential mix — both inputs are in the same normalized space
+    float leftNorm  = vel - omega;
+    float rightNorm = vel + omega;
 
-    float leftWheelPWM = (leftWheelV / MAX_SPEED) * defaultSpeed;
-    float rightWheelPWM = (rightWheelV / MAX_SPEED) * defaultSpeed;
-
-    // Serial.println("Left wheel velocity: " + String(leftWheelV) + " Right wheel velocity: " + String(rightWheelV));
-
-
-    if(invertForward){
-        leftEncoder.setTarPWM(leftWheelPWM);
-        rightEncoder.setTarPWM(-rightWheelPWM);
-    }
-    else{
-        leftEncoder.setTarPWM(-leftWheelPWM);
-        rightEncoder.setTarPWM(rightWheelPWM);
+    // Normalize if either exceeds 1.0 so we don't clip asymmetrically
+    float maxMag = max(fabs(leftNorm), fabs(rightNorm));
+    if (maxMag > 1.0f) {
+        leftNorm  /= maxMag;
+        rightNorm /= maxMag;
     }
 
+    // Scale to PWM range using defaultSpeed as the cap
+    float leftPWM  = leftNorm  * defaultSpeed;
+    float rightPWM = rightNorm * defaultSpeed;
 
+    if (invertForward) {
+        leftEncoder.setTarPWM(leftPWM);
+        rightEncoder.setTarPWM(-rightPWM);
+    } else {
+        leftEncoder.setTarPWM(-leftPWM);
+        rightEncoder.setTarPWM(rightPWM);
+    }
 }
 
 // Function to move the robot in a certain direction with a given speed (-1.0 for full left, 1.0 for full right, 0 for straight)
@@ -422,8 +418,9 @@ void MainDrive::updateOdometry()
     //check if this imporoves heading estimatio
     float gyroDtheta = gyroZ*DEG_TO_RAD * dt; // you'll need to track dt between calls
 
-    float alpha = 0.98; // trust gyro more for heading
-    float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
+    // float alpha = 0.98; // trust gyro more for heading
+    // float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
+    float fusedDtheta = encoderDtheta;
     
 
     lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);

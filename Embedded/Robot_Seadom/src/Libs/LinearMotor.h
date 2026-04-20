@@ -17,6 +17,7 @@ public:
     void SetupLinearMotor();
     void MoveDown();
     void MoveHome();
+    void MoveMid();
     void move(int steps);
 
 private:

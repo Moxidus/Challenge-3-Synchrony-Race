@@ -6,20 +6,19 @@
 #include "Libs/MainDriveLib.h"
 #include "Libs/LinearMotor.h"
 
-
-
-struct WayPoint {
-  float x;
-  float y;
-  float theta;
+struct WayPoint
+{
+  float x;     // Front is positive
+  float y;     // Left is positive
+  float theta; // Anti-cloways is positive
 };
 
-struct PalfaBeta {
+struct PalfaBeta
+{
   float distance;
   float alfa;
   float beta;
 };
-
 
 #if defined(MOTHER_ROBOT) && defined(DAUGHTER_ROBOT)
 #error "Only one robot can be defined: MOTHER_ROBOT or DAUGHTER_ROBOT"
@@ -52,7 +51,6 @@ void setUpBluetooth();
 void MoveToPointUpdate();
 void startPointTracking(WayPoint targetPoint);
 
-
 unsigned long timeSinceStart = 0;
 
 void setup()
@@ -63,7 +61,7 @@ void setup()
   mainDrive.SetupLineFollow(KP, KI, KD, invertForward);
   mainDrive.StopFollowing();
 
-  // mother ship only setup
+// mother ship only setup
 #ifdef MOTHER_ROBOT
   linearMotor.SetupLinearMotor();
 #endif
@@ -72,36 +70,28 @@ void setup()
 #ifdef DAUGHTER_ROBOT
 #endif
 
-
   gyro.begin();
 
   timeSinceStart = millis();
-
-
 }
-
 
 void loop()
 {
-  
+
 #ifdef DAUGHTER_ROBOT
 #endif
-
 
   gyro.update();
   HandleCommands();
 
-  mainDrive.gyroZ  = gyro.getGyroZ();
+  mainDrive.gyroZ = gyro.getGyroZ(); // Gyro was causing problems so we are not using it at the moment
   mainDrive.UpdateMainDrive();
   gripper.update();
   MoveToPointUpdate();
 
-
-
 #ifdef MOTHER_ROBOT
   linearMotor.Update();
 #endif
-
 
   // testing remove after START --------------------------------------
   // static bool hasMoved = false;
@@ -144,25 +134,21 @@ void loop()
   // {
   // }
 
-  
-    // // print gyro stats
-    // Serial.print("Gyro: ");
-    // Serial.print(gyro.getGyroX());
-    // Serial.print(",\t");
-    // Serial.print(gyro.getGyroY());
-    // Serial.print(",\t");
-    // Serial.println(gyro.getGyroZ());
+  // // print gyro stats
+  // Serial.print("Gyro: ");
+  // Serial.print(gyro.getGyroX());
+  // Serial.print(",\t");
+  // Serial.print(gyro.getGyroY());
+  // Serial.print(",\t");
+  // Serial.println(gyro.getGyroZ());
 
-
-  
   // long deltaLeft = mainDrive.leftEncoder.getCurPos() - lastLeftEncoderPos;
   // we check the actually distance and measured distance and calibrate the radius adjustment
-  
+
   // testing remove after END -----------------------------------------
 
   delay(1); // TODO: fix pid loop to not need this delay
 }
-
 
 void setUpBluetooth()
 {
@@ -234,8 +220,8 @@ int executeCommand(String cmd)
   {
     // TODO: Implement Celebration
   }
-  else if (cmd.startsWith("start point")) 
-{
+  else if (cmd.startsWith("start point"))
+  {
     // The command is "start point x y thata"
     // Find the space after 'point'
     int space1 = cmd.indexOf(' ', 7); // Start search after "start "
@@ -244,22 +230,27 @@ int executeCommand(String cmd)
 
     Serial.println("Received start point command: " + cmd.substring(space2 + 1, space3) + " " + cmd.substring(space3 + 1) + " " + cmd.substring(space1 + 1, space2));
 
-    if (space1 != -1 && space2 != -1 && space3 != -1) {
-        float x = cmd.substring(space1 + 1, space2).toFloat();
-        float y = cmd.substring(space2 + 1, space3).toFloat();
-        float theta = cmd.substring(space3 + 1).toFloat();
+    if (space1 != -1 && space2 != -1 && space3 != -1)
+    {
+      float x = cmd.substring(space1 + 1, space2).toFloat();
+      float y = cmd.substring(space2 + 1, space3).toFloat();
+      float theta = cmd.substring(space3 + 1).toFloat();
+      theta = theta * DEG_TO_RAD;
 
-        Serial.print("Start Point Set: ");
-        Serial.print(x); Serial.print(", ");
-        Serial.print(y); Serial.print(", ");
-        Serial.println(theta);
+      Serial.print("Start Point Set: ");
+      Serial.print(x);
+      Serial.print(", ");
+      Serial.print(y);
+      Serial.print(", ");
+      Serial.println(theta);
 
-        // Now you can use x, y, and theta to set the starting point for your navigation
-        
-         startPointTracking({x, y, theta});
+      // Now you can use x, y, and theta to set the starting point for your navigation
+
+      startPointTracking({x, y, theta});
     }
-} else if (cmd.startsWith("start relpoint")) 
-{
+  }
+  else if (cmd.startsWith("start relpoint"))
+  {
     // The command is "start point x y thata"
     // Find the space after 'point'
     int space1 = cmd.indexOf(' ', 7); // Start search after "start "
@@ -268,38 +259,49 @@ int executeCommand(String cmd)
 
     Serial.println("Received start relative point command: " + cmd.substring(space2 + 1, space3) + " " + cmd.substring(space3 + 1) + " " + cmd.substring(space1 + 1, space2));
 
-    if (space1 != -1 && space2 != -1 && space3 != -1) {
-        float x = cmd.substring(space1 + 1, space2).toFloat();
-        float y = cmd.substring(space2 + 1, space3).toFloat();
-        float theta = cmd.substring(space3 + 1).toFloat();
+    if (space1 != -1 && space2 != -1 && space3 != -1)
+    {
+      float x = cmd.substring(space1 + 1, space2).toFloat();
+      float y = cmd.substring(space2 + 1, space3).toFloat();
+      float theta = cmd.substring(space3 + 1).toFloat();
+      theta = theta * DEG_TO_RAD;
 
-        Serial.print("Start Point Set: ");
-        Serial.print(x); Serial.print(", ");
-        Serial.print(y); Serial.print(", ");
-        Serial.println(theta);
+      Serial.print("relative Point Set: ");
+      Serial.print(x);
+      Serial.print(", ");
+      Serial.print(y);
+      Serial.print(", ");
+      Serial.println(theta);
 
-        // Now you can use x, y, and theta to set the starting point for your navigation
-         startPointTracking({x + mainDrive.globalX, y + mainDrive.globalY, theta + mainDrive.globalTheta});
-        
-        // Example: myNavigator.SetStart(x, y, z);
+      // rotate
+      // TODO: MAKE SURE THE ROTATION IS IN THE CORRECT DIRRECTION
+      float rotatedX = cos(theta) * x + -sin(theta) * y;
+      float rotatedY = sin(theta) * x + cos(theta) * y;
+
+      // Now you can use x, y, and theta to set the starting point for your navigation
+      startPointTracking({rotatedX + mainDrive.globalX, rotatedY + mainDrive.globalY, theta + mainDrive.globalTheta});
+
+      // Example: myNavigator.SetStart(x, y, z);
     }
-}
+  }
   else if (cmd == "stop point")
   {
     // TODO: Implement
   }
-  else if (cmd.startsWith("vel")) {
+  else if (cmd.startsWith("vel"))
+  {
     // Find the first space (after "vel")
     int firstSpace = cmd.indexOf(' ');
     // Find the second space (between v and omega)
     int secondSpace = cmd.indexOf(' ', firstSpace + 1);
 
-    if (firstSpace != -1 && secondSpace != -1) {
-        float v = cmd.substring(firstSpace + 1, secondSpace).toFloat();
-        float omega = cmd.substring(secondSpace + 1).toFloat();
-        mainDrive.SetVelocity(v, omega);
+    if (firstSpace != -1 && secondSpace != -1)
+    {
+      float v = cmd.substring(firstSpace + 1, secondSpace).toFloat();
+      float omega = cmd.substring(secondSpace + 1).toFloat();
+      mainDrive.SetVelocity(v, omega);
     }
-}
+  }
   else if (cmd.startsWith("point"))
   {
     int x, y;
@@ -340,8 +342,7 @@ int executeCommand(String cmd)
     Serial3.print(" Y: ");
     Serial3.print(mainDrive.globalY);
     Serial3.print(" Theta: ");
-    Serial3.println(mainDrive.globalTheta/ PI * 180);
-
+    Serial3.println(mainDrive.globalTheta / PI * 180);
   }
   else if (cmd.startsWith("resetpos"))
   {
@@ -360,12 +361,10 @@ int executeCommand(String cmd)
   return 0;
 }
 
-
-
 /*
 
     errorCoords = getError(robotInertialCoordinace, wayPoints[targetWayPointIndex])
-   
+
     pAlfaBeta = getPAlfaBeta(errorCoords)
 
     # print error with 2 decimal places
@@ -385,12 +384,12 @@ int executeCommand(String cmd)
 
     # print float with 2 decimal places
     print(f"deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f} deg", f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f} deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f} deg" )
-    
+
 
     vel = getVelocity(pAlfaBeta)
     omega = getAngularVelocity(pAlfaBeta)
 
-    
+
     vel = np.clip(vel, -vMax, vMax) * max(0, np.cos(pAlfaBeta[1]))  # Reduce velocity when not facing the target
     omega = np.clip(omega, -omegaMax, omegaMax)
 
@@ -408,52 +407,50 @@ int executeCommand(String cmd)
 #define kAlfa (10.0 / 10)
 #define kBeta (-1.5 / 10)
 
-#define vMax 1.5 // m/s
-#define omegaMax 0.1 // rad/s
-
-
-
+#define vMax 1.0     // m/s
+#define omegaMax 1.0 // rad/s
 
 bool isTrackingPoint = false;
 WayPoint TargetPoint;
 
 void startPointTracking(WayPoint targetPoint)
 {
-  
+
   TargetPoint = targetPoint;
   Serial.println("Target Pose: (" + String(TargetPoint.x) + ", " + String(TargetPoint.y) + ", " + String(TargetPoint.theta) + ")");
   isTrackingPoint = true;
 }
 
-
-float deg2rad(float deg) {
-    return deg * (PI / 180.0);
+float deg2rad(float deg)
+{
+  return deg * (PI / 180.0);
 }
 
 WayPoint getError(WayPoint currentPose, WayPoint targetPose)
 {
 
-    // Translation: target relative to robot
-    float dx = targetPose.x - currentPose.x;
-    float dy = targetPose.y - currentPose.y;
+  // Translation: target relative to robot
+  float dx = targetPose.x - currentPose.x;
+  float dy = targetPose.y - currentPose.y;
 
-    float theta = currentPose.theta;
+  float theta = currentPose.theta;
 
-    // Rotation into robot frame
-    float dx_r =  cos(theta) * dx + sin(theta) * dy;
-    float dy_r = -sin(theta) * dx + cos(theta) * dy;
+  // Rotation into robot frame
+  float dx_r = cos(theta) * dx + sin(theta) * dy;
+  float dy_r = -sin(theta) * dx + cos(theta) * dy;
 
-    // Orientation error
-    float dtheta = targetPose.theta - currentPose.theta;
-    dtheta = atan2(sin(dtheta), cos(dtheta));
+  // Orientation error
+  float dtheta = targetPose.theta - currentPose.theta;
+  dtheta = atan2(sin(dtheta), cos(dtheta));
 
-    WayPoint errorCoords = {dx_r, dy_r, dtheta};
+  WayPoint errorCoords = {dx_r, dy_r, dtheta};
 
-    return errorCoords;
+  return errorCoords;
 }
 
-PalfaBeta getPAlfaBeta(WayPoint errorCoords){
-  float distance = sqrt(errorCoords.x*errorCoords.x + errorCoords.y*errorCoords.y);
+PalfaBeta getPAlfaBeta(WayPoint errorCoords)
+{
+  float distance = sqrt(errorCoords.x * errorCoords.x + errorCoords.y * errorCoords.y);
 
   float alfa = atan2(errorCoords.y, errorCoords.x);
   alfa = atan2(sin(alfa), cos(alfa)); // Normalize to [-pi, pi]
@@ -464,30 +461,56 @@ PalfaBeta getPAlfaBeta(WayPoint errorCoords){
   return pAlfaBeta;
 }
 
-
-
-
-float getVelocity(PalfaBeta pAlfaBeta){
-    return kp * pAlfaBeta.distance;
+float getVelocity(PalfaBeta pAlfaBeta)
+{
+  return kp * pAlfaBeta.distance;
 }
 
-float getAngularVelocity(PalfaBeta pAlfaBeta){
-    return kAlfa * pAlfaBeta.alfa + kBeta * pAlfaBeta.beta;
+float getAngularVelocity(PalfaBeta pAlfaBeta)
+{
+  return kAlfa * pAlfaBeta.alfa + kBeta * pAlfaBeta.beta;
 }
 
-void MoveToPointUpdate(){
-  if (!isTrackingPoint) return;
+void MoveToPointUpdate()
+{
+  if (!isTrackingPoint)
+    return;
 
   WayPoint currentPos = {mainDrive.globalX, mainDrive.globalY, mainDrive.globalTheta};
   WayPoint errorCoords = getError(currentPos, TargetPoint);
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
   // --- Thresholds (tune these) ---
-  const float distThresh  = 10.0f;   // mm
-  const float thetaThresh = deg2rad(8.0f);
-  const float alfaDeadzone = 15.0f;  // mm — stop steering by alfa when this close
+  const float distThresh = 100.0f; // mm
+  const float thetaThresh = 8.0f * DEG_TO_RAD;
+  const float alfaDeadzone = 50.0f; // mm — stop steering by alfa when this close
 
-  if (pAlfaBeta.distance < distThresh && abs(errorCoords.theta) < thetaThresh) {
+  Serial.print(" error x: ");
+  Serial.print(errorCoords.x);
+  Serial.print(", error y: ");
+  Serial.print(errorCoords.y);
+  Serial.print(", error theta: ");
+  Serial.print(errorCoords.theta * RAD_TO_DEG);
+  Serial.print(", error abs theta: ");
+  Serial.println(fabs(errorCoords.theta) * RAD_TO_DEG);
+  // Serial.print(omega);
+
+  Serial.print(" current x: ");
+  Serial.print(currentPos.x);
+  Serial.print(",  current y: ");
+  Serial.print(currentPos.y);
+  Serial.print(",  current theta: ");
+  Serial.println(currentPos.theta * RAD_TO_DEG);
+  
+  Serial.print(" beta: ");
+  Serial.print(pAlfaBeta.beta);
+  Serial.print(", dist: ");
+  Serial.print(pAlfaBeta.distance);
+  Serial.print(", alfa: ");
+  Serial.println(pAlfaBeta.alfa);
+
+  if (pAlfaBeta.distance < distThresh && fabs(errorCoords.theta) < thetaThresh)
+  {
     Serial.println("Reached waypoint, stopping");
     mainDrive.StopFollowing();
     mainDrive.SetVelocity(0, 0);
@@ -495,16 +518,23 @@ void MoveToPointUpdate(){
     return;
   }
 
-  float vel   = getVelocity(pAlfaBeta);
+  float vel = getVelocity(pAlfaBeta);
   float omega = getAngularVelocity(pAlfaBeta);
 
   // Kill alfa steering when very close — only correct final heading
-  if (pAlfaBeta.distance < alfaDeadzone) {
-    omega = kBeta * errorCoords.theta;  
+  if (pAlfaBeta.distance < alfaDeadzone)
+  {
+    omega = kBeta * errorCoords.theta;
   }
+  omega = -omega;
 
-  vel   = constrain(vel,   -vMax, vMax)   * max(0.0f, cos(pAlfaBeta.alfa));
+  vel = constrain(vel, -vMax, vMax) * max(0.0f, cos(pAlfaBeta.alfa));
   omega = constrain(omega, -omegaMax, omegaMax);
 
-  mainDrive.SetVelocity(vel * 5000.0f, omega * 7000.0f);
+  Serial.print("vel: ");
+  Serial.print(vel);
+  Serial.print(", omega: ");
+  Serial.println(omega);
+
+  mainDrive.SetVelocity(vel * 1000.0f, omega);
 }

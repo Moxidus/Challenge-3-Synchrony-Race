@@ -34,6 +34,11 @@ void LinearMotor::MoveHome() {
     // _delay(1);
 }
 
+void LinearMotor::MoveMid()
+{
+    encoderMotor.moveTo(750);
+}
+
 void LinearMotor::move(int steps)
 {
     encoderMotor.moveTo(steps);
