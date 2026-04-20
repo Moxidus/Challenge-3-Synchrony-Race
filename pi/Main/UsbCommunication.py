@@ -3,25 +3,28 @@
 
 import time
 import asyncio
-
+import serial
 
 
 class UsbCommunication:
     def __init__(self):
         # Initialize USB communication parameters and variables
+        ser = serial.Serial('/dev/ttyUSB0', 9600, timeout = 1)
         self.responseBuffer = []
-
     def connect(self):
         # Establish USB serial connection with the Dumpster Truck (DT)
-        pass
+        if not ser.is_open:
+            ser.open()
 
     def disconnect(self):
         # Disconnect USB serial connection with the Dumpster Truck (DT)
-        pass
+        if ser.is_open:
+            ser.close()
 
     def send_command(self, command):
         # Send a command to the Dumpster Truck (DT) over USB serial
-        pass
+        Cmd_line = "{command}\n"
+	    ser.write(l.encode("ascii"))
 
     def get_last_response(self) -> str:
         # Get the last response received from the Dumpster Truck (DT) over USB serial
