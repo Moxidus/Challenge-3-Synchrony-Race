@@ -79,7 +79,7 @@ async def race():
 
     # Request DTruck current location and store it
     DTruckRadio.send_command("getpos")
-    success, lineLocation = DTruckRadio.wait_for_response("getpos")
+    success, lineLocation = DTruckRadio.wait_for_response("getpos") # TODO: THIS IS DEFFINETLY NOT RIGHT!!! FIX
 
     if not success:
         print("timeout while waiting for DFire to reach A")        

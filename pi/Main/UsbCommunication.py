@@ -7,9 +7,9 @@ import serial
 import threading
 
 class UsbCommunication:
-    def __init__(self):
+    def __init__(self, mockSerial=None):
         # Initialize USB communication parameters and variables
-        self.ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+        self.ser = mockSerial or serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
         self.responseBuffer = []
         self._read_thread = None
         self._running = False

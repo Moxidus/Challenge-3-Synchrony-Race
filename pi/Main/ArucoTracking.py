@@ -15,7 +15,7 @@ aruco_Dict = cv2.aruco.getPredefinedDictionary(aruco_type)
 aruco_Params = cv2.aruco.DetectorParameters()
 
 root = os.getcwd()
-camera_calibration_data = os.path.join(root, "fishEyeA53CameraCalibration_fisheye_droidCam.npz")
+camera_calibration_data = os.path.join(root, "Main", "fishEyeA53CameraCalibration_fisheye_droidCam.npz")
 data = np.load(camera_calibration_data)
 cam_Matrix = data["camMatrix"]
 dist_Coeff = data["distCoeff"]
@@ -55,3 +55,11 @@ class ArucoTracking:
     def get_marker_position(self):
         # Return the current position of the detected Aruco marker
         pass
+
+
+
+# testing
+
+if __name__ == "__main__":
+    tracker = ArucoTracking()
+    tracker.start_tracking()
