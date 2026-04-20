@@ -91,7 +91,7 @@ async def race():
     # Turn on camera and send local coordinates of an Aruco marker to DTruck every frame
     arucoTracking = ArucoTracking()
     
-    arucoPosCameraFrame = arucoTracking.get_marker_position()
+    img, arucoPosCameraFrame = arucoTracking.get_marker_position()
     # TODO: convert arucoPosCameraFrame to global coordinates using camera_location and lineLocation and send to DTruck
 
     # wait for "reached point B" signal from DTruck
