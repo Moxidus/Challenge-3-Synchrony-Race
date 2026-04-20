@@ -37,24 +37,107 @@ def undistort_fisheye(img):
 
     return undistorted, newK
 
+# Source - https://stackoverflow.com/a/76802895
+# Posted by M lab, modified by community. See post 'Timeline' for change history
+# Retrieved 2026-04-20, License - CC BY-SA 4.0
+
+def estimatePoseSingleMarkers(corners, marker_size, mtx, distortion):
+    '''
+    This will estimate the rvec and tvec for each of the marker corners detected by:
+       corners, ids, rejectedImgPoints = detector.detectMarkers(image)
+    corners - is an array of detected corners for each detected marker in the image
+    marker_size - is the size of the detected markers
+    mtx - is the camera matrix
+    distortion - is the camera distortion matrix
+    RETURN list of rvecs, tvecs, and trash (so that it corresponds to the old estimatePoseSingleMarkers())
+    '''
+    marker_points = np.array([[-marker_size / 2, marker_size / 2, 0],
+                              [marker_size / 2, marker_size / 2, 0],
+                              [marker_size / 2, -marker_size / 2, 0],
+                              [-marker_size / 2, -marker_size / 2, 0]], dtype=np.float32)
+    trash = []
+    rvecs = []
+    tvecs = []
+    for c in corners:
+        nada, R, t = cv2.solvePnP(marker_points, c, mtx, distortion, False, cv2.SOLVEPNP_IPPE_SQUARE)
+        rvecs.append(R)
+        tvecs.append(t)
+        trash.append(nada)
+    return rvecs, tvecs, trash
+
+
+
+def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
+    # Undistort fisheye
+    img, camMat = undistort_fisheye(img)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    detector = cv2.aruco.ArucoDetector(aruco_Dict, aruco_Params)
+    corners, ids, rejected = detector.detectMarkers(gray)
+    
+    if ids is None:
+        return img, None
+
+    aruco.drawDetectedMarkers(img, corners, ids)
+
+    rvecs, tvecs, _ = estimatePoseSingleMarkers(
+        corners, 0.042, camMat, None  # distortion already removed
+    )
+
+    for i in range(len(ids)):
+        tvec = tvecs[i]
+        print(tvecs)
+
+        # True distance
+        distance = np.linalg.norm(tvec)
+
+        # print(f"Marker ID {ids[i][0]}")
+        print(f"Distance: {distance:.3f} m, XYZ: {tvec}\n")
+
+        if drawDistance:
+            # Display distance on image
+            text = f"ID {ids[i][0]}: {distance:.3f} m"
+            print(corners[0][0][0][0], corners[0][0][0][1])
+
+            cv2.putText(img, text, (int(corners[0][0][0][0]), int(corners[0][0][0][1] - 10)),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1
+            )
+
+        # Draw axes (center of marker)s
+        cv2.drawFrameAxes(img, camMat, None, rvecs[i], tvecs[i], 0.05)
+
+        return img, tvec
+    
 
 class ArucoTracking:
     def __init__(self):
-        self.webcam = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L2)  # A53 camera
+        
+        if os.name == "posix":
+            self.webcam = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L2)  # A53 camera
+        elif os.name == "nt":
+            self.webcam = cv2.VideoCapture(0)  # A53 camera
+        else:
+            raise Exception(f"unsuported os '{os.name}'")
+            
         # Initialize Aruco tracking parameters and variables
         pass
 
-    def start_tracking(self):
-        # Start the Aruco tracking process
-        pass
+    # def start_tracking(self):
+    #     # Start the Aruco tracking process
+    #     pass  
 
-    def stop_tracking(self):
-        # Stop the Aruco tracking process
-        pass
+    # def stop_tracking(self):
+    #     # Stop the Aruco tracking process
+    #     pass
 
     def get_marker_position(self):
-        # Return the current position of the detected Aruco marker
-        pass
+        ret, img = self.webcam.read()
+        
+        if not ret:
+            raise Exception("Failed to fetch webcam")
+        
+        return arucoPoseEstimation(cam_Matrix, dist_Coeff, img, True)
 
 
 
@@ -62,4 +145,11 @@ class ArucoTracking:
 
 if __name__ == "__main__":
     tracker = ArucoTracking()
-    tracker.start_tracking()
+    
+    while True:
+        img, pos = tracker.get_marker_position()
+        print(pos)
+        cv2.imshow('test ', img)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    
