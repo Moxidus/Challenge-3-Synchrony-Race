@@ -5,12 +5,12 @@ import cv2
 import numpy as np
 import os
 from cv2 import aruco
-
+import math
 
 # configuration parameters
 aruco_size = 0.042
 aruco_marker_id = 1
-aruco_type = cv2.aruco.DICT_4X4_1000
+aruco_type = cv2.aruco.DICT_4X4_50
 aruco_Dict = cv2.aruco.getPredefinedDictionary(aruco_type)
 aruco_Params = cv2.aruco.DetectorParameters()
 
@@ -91,7 +91,21 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
             continue
         
         tvec = tvecs[i]
+        rvec = rvecs[i]
         # print(tvecs)
+
+        
+        # 1. Convert rvec to a 3x3 Matrix
+        rmat, _ = cv2.Rodrigues(rvec)
+
+        yaw_radians = math.atan2(rmat[1, 0], rmat[0, 0])
+        pitch_radians = math.atan2(-rmat[2, 0], math.sqrt(rmat[2, 1]**2 + rmat[2, 2]**2))
+        roll_radians = math.atan2(rmat[2, 1], rmat[2, 2])
+
+        yaw_degrees = math.degrees(yaw_radians)
+        # Might have to switch roll and pitch depending on whether the tag is on its side
+        pitch_degrees = math.degrees(pitch_radians)
+        roll_degrees = math.degrees(roll_radians)
 
         # True distance
         distance = np.linalg.norm(tvec)
@@ -111,7 +125,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
         # Draw axes (center of marker)s
         cv2.drawFrameAxes(img, camMat, None, rvecs[i], tvecs[i], 0.05)
 
-        return img, tvec
+        return img, tvec, yaw_degrees, pitch_degrees, roll_degrees
     return img, None
     
 

@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 import os
 from cv2 import aruco
-
+import math
 
 # arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_100)
-arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
+arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 arucoParams = cv2.aruco.DetectorParameters()
 
 
@@ -53,7 +53,6 @@ def estimatePoseSingleMarkers(corners, marker_size, mtx, distortion):
     return rvecs, tvecs, trash
 
 
-
 def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
     # Undistort fisheye
     img, camMat = undistort_fisheye(img, camMat, distCoeff)
@@ -76,14 +75,38 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
         corners, 0.042, camMat, None  # distortion already removed
     )
 
+    
+
     for i in range(len(ids)):
-        tvec = tvecs[i][0]
+        if ids[i] != 0:
+            continue
+        
+        tvec = tvecs[i]
+        rvec = rvecs[i]
+        
+        # 1. Convert rvec to a 3x3 Matrix
+        rmat, _ = cv2.Rodrigues(rvec)
+
+        # 2. Extract Yaw (rotation around the vertical axis)
+        # Note: The exact index depends on your coordinate system. 
+        # For standard OpenCV camera coords (Z forward, Y down):
+        yaw_radians = math.atan2(rmat[1, 0], rmat[0, 0])
+        pitch_radians = math.atan2(-rmat[2, 0], math.sqrt(rmat[2, 1]**2 + rmat[2, 2]**2))
+        roll_radians = math.atan2(rmat[2, 1], rmat[2, 2])
+
+        # 3. Convert to degrees for sanity check
+        yaw_degrees = math.degrees(yaw_radians)
+        pitch_degrees = math.degrees(pitch_radians)
+        roll_degrees = math.degrees(roll_radians)
 
         # True distance
         distance = np.linalg.norm(tvec)
 
         # print(f"Marker ID {ids[i][0]}")
-        print(f"Distance: {distance:.3f} m, XYZ: {tvec}\n")
+        print(f"Distance: {distance:.3f} m, XYZ: {tvec}, yaw: {yaw_degrees}\, pitch: {pitch_degrees}\, roll: {roll_degrees}\n")
+        
+        
+        plotter.update(roll_degrees, pitch_degrees, yaw_degrees)
 
         if drawDistance:
             # Display distance on image
@@ -99,6 +122,45 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
 
     return img
 
+import matplotlib.pyplot as plt
+from collections import deque
+
+class PosePlotter:
+    def __init__(self, max_samples=100):
+        self.max_samples = max_samples
+        self.yaw_data = deque(maxlen=max_samples)
+        self.pitch_data = deque(maxlen=max_samples)
+        self.roll_data = deque(maxlen=max_samples)
+        
+        plt.ion()  # Turn on interactive mode
+        self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(3, 1, figsize=(8, 6))
+        self.fig.tight_layout(pad=3.0)
+
+    def update(self, roll, pitch, yaw):
+        self.roll_data.append(roll)
+        self.pitch_data.append(pitch)
+        self.yaw_data.append(yaw)
+
+        self.ax1.clear()
+        self.ax2.clear()
+        self.ax3.clear()
+
+        self.ax1.plot(self.roll_data, color='r', label='Roll')
+        self.ax1.set_ylim([-180, 180])
+        self.ax1.legend(loc="upper right")
+
+        self.ax2.plot(self.pitch_data, color='g', label='Pitch')
+        self.ax2.set_ylim([-180, 180])
+        self.ax2.legend(loc="upper right")
+
+        self.ax3.plot(self.yaw_data, color='b', label='Yaw')
+        self.ax3.set_ylim([-180, 180])
+        self.ax3.legend(loc="upper right")
+
+        plt.pause(0.001) # Brief pause to allow the UI to update
+
+
+plotter = PosePlotter(max_samples=50)
 
 if __name__ == "__main__":
 
@@ -111,7 +173,7 @@ if __name__ == "__main__":
     camMatrix = data["camMatrix"]
     distCoeff = data["distCoeff"]
     
-    cam = cv2.VideoCapture(0)
+    cam = cv2.VideoCapture(1)
 
     while True:
         ret, frame = cam.read()
@@ -127,12 +189,12 @@ if __name__ == "__main__":
         if result is not None:
             width = result.shape[0]*2
             height = result.shape[1]*2
-            result = cv2.resize(result, ( height,width))
+            # result = cv2.resize(result, ( height,width))
             cv2.imshow("Webcam", result)
         else:
             width = frame.shape[0]*2
             height = frame.shape[1]*2
-            frame = cv2.resize(frame, (height,width))
+            # frame = cv2.resize(frame, (height,width))
             cv2.imshow("Webcam", frame)
  
         if cv2.waitKey(1) & 0xFF == ord('q'):

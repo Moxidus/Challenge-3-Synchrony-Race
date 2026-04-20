@@ -34,7 +34,7 @@ async def track():
 	
  
 	while True:
-		img, pos = tracker.get_marker_position()
+		img, pos, yaw_degrees, pitch_degrees, roll_degrees = tracker.get_marker_position()
 
 		if pos is not None:
 			# R_y = np.array([[0, 0, 1],
@@ -47,12 +47,12 @@ async def track():
 			print(pos[0])
 			x = round(pos[2][0]*1000 + xOffset, 2)
 			y = round(pos[0][0]*1000 + yOffset, 2)
-			# y = 0
+			theta = -pitch_degrees
    
 			print(f"X: {x:.3f} y: {y} ")
 
 			await asyncio.sleep(1)
-			await DTruckRadio.send_command(f"start relpoint {x} {-y} 0")
+			await DTruckRadio.send_command(f"start relpoint {x} {-y} {pitch_degrees}") # these cordinates will be rotated in the robot
 			await DTruckRadio.send_command(f"getpos")
 			print(DTruckRadio.get_last_response())
 
