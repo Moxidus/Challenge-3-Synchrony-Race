@@ -91,13 +91,13 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
             continue
         
         tvec = tvecs[i]
-        print(tvecs)
+        # print(tvecs)
 
         # True distance
         distance = np.linalg.norm(tvec)
 
         # print(f"Marker ID {ids[i][0]}")
-        print(f"Distance: {distance:.3f} m, XYZ: {tvec}\n")
+        # print(f"Distance: {distance:.3f} m, XYZ: {tvec}\n")
 
         if drawDistance:
             # Display distance on image
@@ -121,7 +121,7 @@ class ArucoTracking:
         if os.name == "posix":
             self.webcam = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L2)  # A53 camera
         elif os.name == "nt":
-            self.webcam = cv2.VideoCapture(2)  # A53 camera
+            self.webcam = cv2.VideoCapture(1)  # A53 camera
         else:
             raise Exception(f"unsuported os '{os.name}'")
             

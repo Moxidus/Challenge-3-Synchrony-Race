@@ -5,11 +5,20 @@ import time
 import asyncio
 import serial
 import threading
+import os
 
 class UsbCommunication:
     def __init__(self, mockSerial=None):
         # Initialize USB communication parameters and variables
-        self.ser = mockSerial or serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+        
+        if os.name == "posix":
+            self.ser = mockSerial or serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+        elif os.name == "nt":
+            self.ser = mockSerial or serial.Serial('COM9', 115200, timeout=1)
+        else:
+            raise Exception(f"unsuported os '{os.name}'")
+        
+        # self.ser = mockSerial or serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
         self.responseBuffer = []
         self._read_thread = None
         self._running = False

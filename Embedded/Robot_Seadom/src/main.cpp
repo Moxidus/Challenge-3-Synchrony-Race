@@ -255,7 +255,31 @@ int executeCommand(String cmd)
         Serial.println(theta);
 
         // Now you can use x, y, and theta to set the starting point for your navigation
+        
          startPointTracking({x, y, theta});
+    }
+} else if (cmd.startsWith("start relpoint")) 
+{
+    // The command is "start point x y thata"
+    // Find the space after 'point'
+    int space1 = cmd.indexOf(' ', 7); // Start search after "start "
+    int space2 = cmd.indexOf(' ', space1 + 1);
+    int space3 = cmd.indexOf(' ', space2 + 1);
+
+    Serial.println("Received start relative point command: " + cmd.substring(space2 + 1, space3) + " " + cmd.substring(space3 + 1) + " " + cmd.substring(space1 + 1, space2));
+
+    if (space1 != -1 && space2 != -1 && space3 != -1) {
+        float x = cmd.substring(space1 + 1, space2).toFloat();
+        float y = cmd.substring(space2 + 1, space3).toFloat();
+        float theta = cmd.substring(space3 + 1).toFloat();
+
+        Serial.print("Start Point Set: ");
+        Serial.print(x); Serial.print(", ");
+        Serial.print(y); Serial.print(", ");
+        Serial.println(theta);
+
+        // Now you can use x, y, and theta to set the starting point for your navigation
+         startPointTracking({x + mainDrive.globalX, y + mainDrive.globalY, theta + mainDrive.globalTheta});
         
         // Example: myNavigator.SetStart(x, y, z);
     }
@@ -396,9 +420,9 @@ WayPoint TargetPoint;
 void startPointTracking(WayPoint targetPoint)
 {
   
+  TargetPoint = targetPoint;
   Serial.println("Target Pose: (" + String(TargetPoint.x) + ", " + String(TargetPoint.y) + ", " + String(TargetPoint.theta) + ")");
   isTrackingPoint = true;
-  TargetPoint = targetPoint;
 }
 
 
@@ -459,9 +483,9 @@ void MoveToPointUpdate(){
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
   // --- Thresholds (tune these) ---
-  const float distThresh  = 200.0f;   // mm
+  const float distThresh  = 10.0f;   // mm
   const float thetaThresh = deg2rad(8.0f);
-  const float alfaDeadzone = 150.0f;  // mm — stop steering by alfa when this close
+  const float alfaDeadzone = 15.0f;  // mm — stop steering by alfa when this close
 
   if (pAlfaBeta.distance < distThresh && abs(errorCoords.theta) < thetaThresh) {
     Serial.println("Reached waypoint, stopping");
@@ -482,5 +506,5 @@ void MoveToPointUpdate(){
   vel   = constrain(vel,   -vMax, vMax)   * max(0.0f, cos(pAlfaBeta.alfa));
   omega = constrain(omega, -omegaMax, omegaMax);
 
-  mainDrive.SetVelocity(vel * 5000.0f, omega * 5000.0f);
+  mainDrive.SetVelocity(vel * 5000.0f, omega * 7000.0f);
 }

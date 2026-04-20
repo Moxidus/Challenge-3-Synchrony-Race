@@ -205,7 +205,7 @@ void MainDrive::SetVelocity(float vel, float omega)
     float leftWheelPWM = (leftWheelV / MAX_SPEED) * defaultSpeed;
     float rightWheelPWM = (rightWheelV / MAX_SPEED) * defaultSpeed;
 
-    Serial.println("Left wheel velocity: " + String(leftWheelV) + " Right wheel velocity: " + String(rightWheelV));
+    // Serial.println("Left wheel velocity: " + String(leftWheelV) + " Right wheel velocity: " + String(rightWheelV));
 
 
     if(invertForward){
