@@ -9,7 +9,7 @@ from cv2 import aruco
 
 # configuration parameters
 aruco_size = 0.042
-aruco_marker_id = 0
+aruco_marker_id = 1
 aruco_type = cv2.aruco.DICT_4X4_1000
 aruco_Dict = cv2.aruco.getPredefinedDictionary(aruco_type)
 aruco_Params = cv2.aruco.DetectorParameters()
@@ -86,6 +86,10 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
     )
 
     for i in range(len(ids)):
+        
+        if ids[i] != aruco_marker_id:
+            continue
+        
         tvec = tvecs[i]
         print(tvecs)
 
@@ -108,6 +112,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
         cv2.drawFrameAxes(img, camMat, None, rvecs[i], tvecs[i], 0.05)
 
         return img, tvec
+    return img, None
     
 
 class ArucoTracking:
@@ -116,7 +121,7 @@ class ArucoTracking:
         if os.name == "posix":
             self.webcam = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L2)  # A53 camera
         elif os.name == "nt":
-            self.webcam = cv2.VideoCapture(0)  # A53 camera
+            self.webcam = cv2.VideoCapture(2)  # A53 camera
         else:
             raise Exception(f"unsuported os '{os.name}'")
             

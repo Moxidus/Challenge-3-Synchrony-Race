@@ -22,6 +22,7 @@ class UsbCommunication:
         self._running = True
         self._read_thread = threading.Thread(target=self._read_loop, daemon=True)
         self._read_thread.start()
+        return True
 
     def disconnect(self):
         # Disconnect USB serial connection with the Dumpster Truck (DT)
