@@ -78,7 +78,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
     
 
     for i in range(len(ids)):
-        if ids[i] != 0:
+        if ids[i] != 1:
             continue
         
         tvec = tvecs[i]

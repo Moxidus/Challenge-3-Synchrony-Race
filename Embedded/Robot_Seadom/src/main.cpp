@@ -36,13 +36,13 @@ bool invertForward = false;
 
 #ifdef MOTHER_ROBOT
 Gripper gripper(PORT3A);
-MainDrive mainDrive(6, SLOT4, SLOT2);
+MainDrive mainDrive(6, SLOT2, SLOT4);
 LinearMotor linearMotor(SLOT1);
 MeGyro gyro(PORT6);
 float KP = 0.3;
 float KI = 0.000;
 float KD = 0.2;
-bool invertForward = true;
+bool invertForward = false;
 #endif
 
 int executeCommand(String cmd);
@@ -404,8 +404,9 @@ int executeCommand(String cmd)
 */
 
 #define kp (3.0 / 10)
-#define kAlfa (10.0 / 10)
-#define kBeta (-1.5 / 10)
+#define kAlfa (15.0 / 10)
+#define kBeta (-10.5 / 10)
+#define kBeta_x (-15.5 / 10)
 
 #define vMax 1.0     // m/s
 #define omegaMax 1.0 // rad/s
@@ -481,9 +482,9 @@ void MoveToPointUpdate()
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
   // --- Thresholds (tune these) ---
-  const float distThresh = 100.0f; // mm
-  const float thetaThresh = 8.0f * DEG_TO_RAD;
-  const float alfaDeadzone = 50.0f; // mm — stop steering by alfa when this close
+  const float distThresh = 50.0f; // mm
+  const float thetaThresh = 4.0f * DEG_TO_RAD;
+  const float alfaDeadzone = 70.0f; // mm — stop steering by alfa when this close
 
   Serial.print(" error x: ");
   Serial.print(errorCoords.x);

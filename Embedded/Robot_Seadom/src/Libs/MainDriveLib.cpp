@@ -418,15 +418,15 @@ void MainDrive::updateOdometry()
     //check if this imporoves heading estimatio
     float gyroDtheta = gyroZ*DEG_TO_RAD * dt; // you'll need to track dt between calls
 
-    // float alpha = 0.98; // trust gyro more for heading
-    // float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
-    float fusedDtheta = encoderDtheta;
+    float alpha = 0.98; // trust gyro more for heading
+    float fusedDtheta = alpha * gyroDtheta + (1.0f - alpha) * encoderDtheta;
+    // float fusedDtheta = encoderDtheta;
     
 
     lastLeftEncoderPos  = (invertForward ?  rawLeft : -rawLeft);
     lastRightEncoderPos = (invertForward ? -rawRight : rawRight);
 
-    if (abs(fusedDtheta) < 1e-5f)  // straight line — arc formula unstable here
+    if (abs(fusedDtheta) < 1e-6f)  // straight line — arc formula unstable here
     {
         globalX += v * cos(globalTheta);
         globalY += v * sin(globalTheta);

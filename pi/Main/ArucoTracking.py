@@ -77,7 +77,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
     corners, ids, rejected = detector.detectMarkers(gray)
     
     if ids is None:
-        return img, None
+        return img, None, None, None, None
 
     aruco.drawDetectedMarkers(img, corners, ids)
 
