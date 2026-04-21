@@ -21,9 +21,9 @@ yOffset = +0.07
 async def track():
 	## initialization
  
-	retUSB = await DTruckRadio.connect()
-	if not retUSB:
-		raise Exception("Failed to connect to DTruck over USB")
+	# retUSB = await DTruckRadio.connect()
+	# if not retUSB:
+	# 	raise Exception("Failed to connect to DTruck over USB")
 
 	await DTruckRadio.send_command("resetpos")
 	await DTruckRadio.send_command("start relpoint 0 0 0")
@@ -53,10 +53,10 @@ async def track():
    
 			print(f"X: {100*x:.3f} y: {100*y:.3f} ")
 
-			await asyncio.sleep(1)
-			await DTruckRadio.send_command(f"start relpoint {x} {y} {theta}") # these cordinates will be rotated in the robot
-			await DTruckRadio.send_command(f"getpos")
-			print(DTruckRadio.get_last_response())
+			# await asyncio.sleep(1)
+			# await DTruckRadio.send_command(f"start relpoint {x} {y} {theta}") # these cordinates will be rotated in the robot
+			# await DTruckRadio.send_command(f"getpos")
+			# print(DTruckRadio.get_last_response())
 
    
 			

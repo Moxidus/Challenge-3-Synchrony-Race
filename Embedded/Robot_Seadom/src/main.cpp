@@ -363,11 +363,19 @@ int executeCommand(String cmd)
 
 
 
+#define DISABLE_BETA
 
 
 #define kp (0.005)
 #define kAlfa (5.5)
+
+#ifndef DISABLE_BETA
 #define kBeta (-3.80)
+#endif
+
+#ifdef DISABLE_BETA
+#define kBeta (0)
+#endif
 
 
 // #define kp (0.005)
@@ -453,8 +461,13 @@ void MoveToPointUpdate()
 
   // --- Thresholds (tune these) ---
   const float distThresh = 0.04f; // m
+  
+  #ifndef DISABLE_BETA
   const float thetaThresh = 10.0f * DEG_TO_RAD;
-  const float alfaDeadzone = 0.04f; // m — stop steering by alfa when this close
+  #endif
+  #ifdef DISABLE_BETA
+  const float thetaThresh = 360 * DEG_TO_RAD;
+  #endif
 
   Serial.print(" error x: ");
   Serial.print(errorCoords.x);
