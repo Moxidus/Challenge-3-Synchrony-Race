@@ -173,7 +173,7 @@ if __name__ == "__main__":
     camMatrix = data["camMatrix"]
     distCoeff = data["distCoeff"]
     
-    cam = cv2.VideoCapture(1)
+    cam = cv2.VideoCapture(0)
 
     while True:
         ret, frame = cam.read()
