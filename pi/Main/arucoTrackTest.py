@@ -12,9 +12,9 @@ import numpy as np
 # camera location relative to the center of the robot (x, y, z) in meters
 camera_location = [ 0.0, 0.0, 0.0] # + some rotation
 gripper_location = [ 0.0, 0.0, 0.0] # + some location
-xOffset = -165.4346507065348 + 9
+xOffset = -0.16
 # xOffset = -276.4346507065348
-yOffset = -33.070739469215464
+yOffset = +0.07
 
 
 
@@ -47,11 +47,11 @@ async def track():
 			# v_rotated = R_y @ pos
 			# print(v_rotated)	
 			print(pos[0])
-			x = round(pos[2][0]*1000 + xOffset, 2)
-			y = round(pos[0][0]*1000 + yOffset, 2)
+			x = round(pos[2][0] + xOffset, 4)
+			y = -round(pos[0][0] + yOffset, 4)
 			theta = roll_degrees * 0
    
-			print(f"X: {x:.3f} y: {y} ")
+			print(f"X: {100*x:.3f} y: {100*y:.3f} ")
 
 			await asyncio.sleep(1)
 			await DTruckRadio.send_command(f"start relpoint {x} {y} {theta}") # these cordinates will be rotated in the robot
@@ -65,7 +65,7 @@ async def track():
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			break
    
-		await asyncio.sleep(5)
+		# await asyncio.sleep(5)
 			
    
 			

@@ -44,9 +44,9 @@
 
 #ifdef MOTHER_ROBOT
 // TODO: MEASURE THESE VALUES FOR THE MOTHER ROBOT and calibrate the adjustments to make it go straight and turn the correct amount when it should
-#define WHEEL_BASE 255
-#define WHEEL_RADIUS 32
-#define WHEEL_RADIUS_ADJUSTMENT 1.1290960775 // this includes gear ration and encoder resolution
+#define WHEEL_BASE 0.255
+#define WHEEL_RADIUS 0.032
+#define WHEEL_RADIUS_ADJUSTMENT 1.017 // this includes gear ration and encoder resolution
 #define WHEEL_BASE_ADJUSTMENT 0.9863013699 // adjust this to make the robot turn the correct amount when it should
 #define ADJUSTED_WHEEL_BASE (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT)
 #define GEAR_RATIO 46.67 // adjust this to make the robot go the correct distance when it should
@@ -93,9 +93,9 @@ public:
     static void targetReached(int16_t slot, int16_t exitId);
     
     float gyroZ = 0;
-    float globalX = 0;
-    float globalY = 0;
-    float globalTheta = 0;
+    float globalX_m = 0;
+    float globalY_m = 0;
+    float globalTheta_rad = 0;
 
     long lastLeftEncoderPos = 0;
     long lastRightEncoderPos = 0;

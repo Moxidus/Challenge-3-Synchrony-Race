@@ -279,7 +279,7 @@ int executeCommand(String cmd)
       float rotatedY = sin(theta) * x + cos(theta) * y;
 
       // Now you can use x, y, and theta to set the starting point for your navigation
-      startPointTracking({rotatedX + mainDrive.globalX, rotatedY + mainDrive.globalY, theta + mainDrive.globalTheta});
+      startPointTracking({rotatedX + mainDrive.globalX_m, rotatedY + mainDrive.globalY_m, theta + mainDrive.globalTheta_rad});
 
       // Example: myNavigator.SetStart(x, y, z);
     }
@@ -336,19 +336,18 @@ int executeCommand(String cmd)
   }
   else if (cmd.startsWith("getpos"))
   {
-    // convert to json later
     Serial3.print("X: ");
-    Serial3.print(mainDrive.globalX);
+    Serial3.print(mainDrive.globalX_m);
     Serial3.print(" Y: ");
-    Serial3.print(mainDrive.globalY);
+    Serial3.print(mainDrive.globalY_m);
     Serial3.print(" Theta: ");
-    Serial3.println(mainDrive.globalTheta / PI * 180);
+    Serial3.println(mainDrive.globalTheta_rad * RAD_TO_DEG); // Thetat gets outputed to degrees
   }
   else if (cmd.startsWith("resetpos"))
   {
-    mainDrive.globalX = 0;
-    mainDrive.globalY = 0;
-    mainDrive.globalTheta = 0;
+    mainDrive.globalX_m = 0;
+    mainDrive.globalY_m = 0;
+    mainDrive.globalTheta_rad = 0;
   }
   else
   {
@@ -361,52 +360,22 @@ int executeCommand(String cmd)
   return 0;
 }
 
-/*
-
-    errorCoords = getError(robotInertialCoordinace, wayPoints[targetWayPointIndex])
-
-    pAlfaBeta = getPAlfaBeta(errorCoords)
-
-    # print error with 2 decimal places
-    print(f"Error Coords: deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f}deg", end=' | ')
-    # print pAlfaBeta with 2 decimal places
-    print(f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f}deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f}deg" )
 
 
 
-    if pAlfaBeta[0] < 1.0 and abs(errorCoords[2]) < np.deg2rad(5):
-        targetWayPointIndex = (targetWayPointIndex + 1) % len(wayPoints)
-        waypointQuivers[targetWayPointIndex-1].set_color('green')
-        waypointQuivers[targetWayPointIndex].set_color('red')
-        print("Reached waypoint, moving to next:", targetWayPointIndex)
-        errorCoords = getError(robotInertialCoordinace, wayPoints[targetWayPointIndex])
-        pAlfaBeta = getPAlfaBeta(errorCoords)
-
-    # print float with 2 decimal places
-    print(f"deltaX: {errorCoords[0]:.2f}, deltaY: {errorCoords[1]:.2f}, deltaTheta: {np.rad2deg(errorCoords[2]):.2f} deg", f"distance: {pAlfaBeta[0]:.2f}, alfa: {np.rad2deg(pAlfaBeta[1]):.2f} deg, beta: {np.rad2deg(pAlfaBeta[2]):.2f} deg" )
 
 
-    vel = getVelocity(pAlfaBeta)
-    omega = getAngularVelocity(pAlfaBeta)
+#define kp (0.005)
+#define kAlfa (5.5)
+#define kBeta (-3.80)
 
 
-    vel = np.clip(vel, -vMax, vMax) * max(0, np.cos(pAlfaBeta[1]))  # Reduce velocity when not facing the target
-    omega = np.clip(omega, -omegaMax, omegaMax)
+// #define kp (0.005)
+// #define kAlfa (8.5)
+// #define kBeta (-0.12)
 
 
-    robotInertialCoordinace[0] += np.cos(robotInertialCoordinace[2])*vel
-    robotInertialCoordinace[1] += np.sin(robotInertialCoordinace[2])*vel
-    robotInertialCoordinace[2] += omega
-    robotInertialCoordinace[2] = np.arctan2(np.sin(robotInertialCoordinace[2]), np.cos(robotInertialCoordinace[2])) # Normalize angle to [-pi, pi]
-
-
-
-*/
-
-#define kp (3.0 / 10)
-#define kAlfa (15.0 / 10)
-#define kBeta (-10.5 / 10)
-#define kBeta_x (-15.5 / 10)
+// #define kBeta_x (-15.5 / 10)
 
 #define vMax 1.0     // m/s
 #define omegaMax 1.0 // rad/s
@@ -455,6 +424,7 @@ PalfaBeta getPAlfaBeta(WayPoint errorCoords)
 
   float alfa = atan2(errorCoords.y, errorCoords.x);
   alfa = atan2(sin(alfa), cos(alfa)); // Normalize to [-pi, pi]
+
   float beta = errorCoords.theta - alfa;
   beta = atan2(sin(beta), cos(beta)); // Normalize to [-pi, pi]
 
@@ -477,14 +447,14 @@ void MoveToPointUpdate()
   if (!isTrackingPoint)
     return;
 
-  WayPoint currentPos = {mainDrive.globalX, mainDrive.globalY, mainDrive.globalTheta};
+  WayPoint currentPos = {mainDrive.globalX_m, mainDrive.globalY_m, mainDrive.globalTheta_rad};
   WayPoint errorCoords = getError(currentPos, TargetPoint);
   PalfaBeta pAlfaBeta = getPAlfaBeta(errorCoords);
 
   // --- Thresholds (tune these) ---
-  const float distThresh = 50.0f; // mm
-  const float thetaThresh = 4.0f * DEG_TO_RAD;
-  const float alfaDeadzone = 70.0f; // mm — stop steering by alfa when this close
+  const float distThresh = 0.04f; // m
+  const float thetaThresh = 10.0f * DEG_TO_RAD;
+  const float alfaDeadzone = 0.04f; // m — stop steering by alfa when this close
 
   Serial.print(" error x: ");
   Serial.print(errorCoords.x);
@@ -523,11 +493,10 @@ void MoveToPointUpdate()
   float omega = getAngularVelocity(pAlfaBeta);
 
   // Kill alfa steering when very close — only correct final heading
-  if (pAlfaBeta.distance < alfaDeadzone)
-  {
-    omega = kBeta * errorCoords.theta;
-  }
-  omega = -omega;
+  // if (pAlfaBeta.distance < alfaDeadzone)
+  // {
+  //   omega = -kBeta * errorCoords.theta;
+  // }
 
   vel = constrain(vel, -vMax, vMax) * max(0.0f, cos(pAlfaBeta.alfa));
   omega = constrain(omega, -omegaMax, omegaMax);
