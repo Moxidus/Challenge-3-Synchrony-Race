@@ -9,7 +9,7 @@ import math
 
 # configuration parameters
 aruco_size = 0.042
-aruco_marker_id = 0
+aruco_marker_id = 1
 aruco_type = cv2.aruco.DICT_4X4_50
 aruco_Dict = cv2.aruco.getPredefinedDictionary(aruco_type)
 aruco_Params = cv2.aruco.DetectorParameters()

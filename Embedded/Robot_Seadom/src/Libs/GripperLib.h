@@ -6,7 +6,7 @@
 
 class Gripper {
 public:
-    Gripper(uint8_t port, unsigned long timeout = 2000);
+    Gripper(uint8_t port, unsigned long timeout = 3000);
 
     void update();
     void open();

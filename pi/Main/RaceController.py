@@ -51,51 +51,144 @@ gripper_location = [ 0.0, 0.0, 0.0] # + some location
 async def race():
 	## initialization
  
-	retUSB = await DTruckRadio.connect()
-	if retUSB:
-		raise Exception("Failed to connect to DTruck over USB")
  
 	retBLE = await DFireRadio.connect()
-	if retBLE:
+	if not retBLE:
 		raise Exception("Failed to connect to DFire over BLE")
+ 
+	retUSB = await DTruckRadio.connect()
+	if not retUSB:
+		raise Exception("Failed to connect to DTruck over USB")
+ 
 
 
 	## stage 1 - Start
 
-	# wait for DTruck and DFire to be ready
-	if not await DTruckRadio.wait_for_command("ready"):
-			print("timeout while waiting for DTruck to be ready")
+	# # wait for DTruck and DFire to be ready
+	# if not await DTruckRadio.wait_for_command("ready"):
+	# 		print("timeout while waiting for DTruck to be ready")
 
-	if not await DFireRadio.wait_for_command("ready"):
-			print("timeout while waiting for DFire to be ready")
+	# if not await DFireRadio.wait_for_command("ready"):
+	# 		print("timeout while waiting for DFire to be ready")
+ 
+	print("Reseting position")
+	await DTruckRadio.send_command("resetpos")
+	await DFireRadio.send_command("resetpos")
+ 
+	print("Setting slow speed")
+	await DTruckRadio.send_command("setspeed 50")
+	await DFireRadio.send_command("setspeed 50")
+ 
+ 
+	print("current position")
+	await DTruckRadio.send_command("getpos")
 
+
+
+	print("waiting for start position")
 	# wait for start signal from DT
-	if not await DTruckRadio.wait_for_command("start"):
-			print("timeout while waiting for DTruck to be start")
-
+	if not await DFireRadio.wait_for_command("start"):
+		print("timeout while waiting for DTruck to be start")
+   
+   
+	await DTruckRadio.send_command("lin down")
+	await asyncio.sleep(3.5)
+    
+    
+	await DTruckRadio.send_command("close grip")
+	await asyncio.sleep(3.5)
+ 
+ 
+	await DTruckRadio.send_command("lin mid")
+	await asyncio.sleep(3.5)
+    
+   
+   
+	print(">>> Starting line following")
 	# send start following the line signal to DTruck and DF
-	DTruckRadio.send_command("start")
-	DFireRadio.send_command("start")
+
+ 
+	await DTruckRadio.send_command("start track")
+	await DFireRadio.send_command("start track")
+ 
+	await asyncio.sleep(1)
+	print("Setting slow speed")
+	await DTruckRadio.send_command("setspeed 150")
+	await DFireRadio.send_command("setspeed 150")
 
 	## stage 2 - reach point A
+
+
+	if not await DFireRadio.wait_for_command("reached A"):
+			print("timeout while waiting for DFire to reach A")
+	print("DF reached the goal")
 
 	# wait for "Reached point A" signals from DTruck and DF
 	if not await DTruckRadio.wait_for_command("reached A"):
 			print("timeout while waiting for DTruck to reach A")
-
-	if not await DFireRadio.wait_for_command("reached A"):
-			print("timeout while waiting for DFire to reach A")
+	print("DT reached the goal")
 
 	# Request DTruck current location and store it
-	DTruckRadio.send_command("getpos")
-	success, lineLocation = DTruckRadio.wait_for_response("getpos") # TODO: THIS IS DEFFINETLY NOT RIGHT!!! FIX
+	# await DTruckRadio.send_command("getpos")
+	# success, lineLocation = await DTruckRadio.wait_for_response("getpos") # TODO: THIS IS DEFFINETLY NOT RIGHT!!! FIX
+	# print(success, "position", lineLocation )
 
-	if not success:
-		print("timeout while waiting for DFire to reach A")        
+	# if not success:
+	# 	print("timeout while waiting for DFire to get position")
 
 	# Send command to rotate 90 degrees to the Left to DTruck
-	DTruckRadio.send_command("rotate 90")
+	await DTruckRadio.send_command("rotate 76")
 	await asyncio.sleep(2)
+ 
+	
+	await DTruckRadio.send_command("move 400")
+	await asyncio.sleep(4)
+ 
+	
+	await DFireRadio.send_command("close grip")
+	await asyncio.sleep(3.5)
+ 
+    
+	await DTruckRadio.send_command("open grip")
+	await asyncio.sleep(3.5)
+ 
+	await DTruckRadio.send_command("move -400")
+	await asyncio.sleep(4)
+ 
+ 
+	await DTruckRadio.send_command("rotate 110")
+	await asyncio.sleep(4)
+ 
+ 
+	await DFireRadio.send_command("rotate 200")
+	await asyncio.sleep(4)
+ 
+ 
+	await DFireRadio.send_command("setHome")
+	await DTruckRadio.send_command("setHome")
+ 
+ 
+ 
+ 
+	await DTruckRadio.send_command("start track")
+	# await asyncio.sleep(4)
+ 
+ 
+	await DFireRadio.send_command("setspeed 50")
+	await DFireRadio.send_command("start track")
+	await asyncio.sleep(2)
+ 
+ 
+	await DFireRadio.send_command("setspeed 150")
+	await DFireRadio.send_command("start track")
+	await asyncio.sleep(5)
+ 
+ 
+	await DFireRadio.send_command("open grip")
+	await asyncio.sleep(3.5)
+ 
+ 
+	await asyncio.sleep(1000)
 
 	# Turn on camera and send local coordinates of an Aruco marker to DTruck every frame
 	arucoTracking = ArucoTracking()
@@ -167,8 +260,9 @@ async def race():
 
 
 
-DTruckRadio = UsbCommunication()
-DFireRadio = BleCommunication()
+# DTruckRadio = UsbCommunication()
+DTruckRadio = BleCommunication(deviceName="Makeblock_LE001b1069005f")
+DFireRadio = BleCommunication(deviceName="Makeblock_LE001b1068770a")
 
 
 asyncio.run(race())

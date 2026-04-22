@@ -20,6 +20,8 @@ struct PalfaBeta
   float beta;
 };
 
+#define LOG_OFF
+
 #if defined(MOTHER_ROBOT) && defined(DAUGHTER_ROBOT)
 #error "Only one robot can be defined: MOTHER_ROBOT or DAUGHTER_ROBOT"
 #endif
@@ -32,6 +34,7 @@ float KP = 0.05;
 float KI = 0.001;
 float KD = 0.3;
 bool invertForward = false;
+MeUltrasonicSensor startSensor(8);
 #endif
 
 #ifdef MOTHER_ROBOT
@@ -52,6 +55,13 @@ void MoveToPointUpdate();
 void startPointTracking(WayPoint targetPoint);
 
 unsigned long timeSinceStart = 0;
+// float Distance = 5.8;
+float Distance = 5.8;
+
+// float Distance = 1;
+bool stopAfter = false;
+bool goHome = false;
+
 
 void setup()
 {
@@ -79,6 +89,12 @@ void loop()
 {
 
 #ifdef DAUGHTER_ROBOT
+
+  if( startSensor.distanceCm() < 20){
+    Serial3.println("start");
+  }
+ 
+
 #endif
 
   gyro.update();
@@ -92,6 +108,14 @@ void loop()
 #ifdef MOTHER_ROBOT
   linearMotor.Update();
 #endif
+
+
+  if( stopAfter && mainDrive.globalX_m >= Distance && !goHome){
+    mainDrive.StopFollowing();
+    Serial3.println("reached A");
+    Serial.println("reached A");
+    stopAfter = false;
+  }
 
   // testing remove after START --------------------------------------
   // static bool hasMoved = false;
@@ -153,7 +177,11 @@ void loop()
 void setUpBluetooth()
 {
   Serial3.begin(115200);
+
+  #ifndef LOG_OFF
   Serial.println("Bluetooth Start!");
+  #endif
+
 }
 
 void HandleCommands()
@@ -166,7 +194,11 @@ void HandleCommands()
 
     if (c == '\n')
     {
+      
+  #ifndef LOG_OFF
       Serial.println("Command: " + command);
+    
+  #endif
       executeCommand(command);
       command = "";
     }
@@ -187,6 +219,10 @@ int executeCommand(String cmd)
   {
     gripper.open();
   }
+  else if (cmd == "setHome")
+  {
+    goHome = true;
+  }
   else if (cmd == "stop track")
   {
     mainDrive.StopFollowing();
@@ -194,6 +230,7 @@ int executeCommand(String cmd)
   else if (cmd == "start track")
   {
     mainDrive.ResumeFollowing();
+    stopAfter = true;
   }
   else if (cmd == "flip")
   {
@@ -208,6 +245,10 @@ int executeCommand(String cmd)
   else if (cmd == "lin down")
   {
     linearMotor.MoveDown();
+  }
+  else if (cmd == "lin mid")
+  {
+    linearMotor.MoveMid();
   }
   else if (cmd.startsWith("linmove "))
   {
@@ -315,6 +356,12 @@ int executeCommand(String cmd)
     int val = cmd.toInt();
     mainDrive.MoveSteps(val);
   }
+  else if (cmd.startsWith("distance"))
+  {
+    cmd.replace("distance", "");
+    int val = cmd.toInt();
+    Distance = val / 1000.0;
+  }
   else if (cmd.startsWith("rotate"))
   {
     cmd.replace("rotate", "");
@@ -336,11 +383,11 @@ int executeCommand(String cmd)
   }
   else if (cmd.startsWith("getpos"))
   {
-    Serial3.print("X: ");
+    Serial3.print("getpos ");
     Serial3.print(mainDrive.globalX_m);
-    Serial3.print(" Y: ");
+    Serial3.print(" ");
     Serial3.print(mainDrive.globalY_m);
-    Serial3.print(" Theta: ");
+    Serial3.print(" ");
     Serial3.println(mainDrive.globalTheta_rad * RAD_TO_DEG); // Thetat gets outputed to degrees
   }
   else if (cmd.startsWith("resetpos"))

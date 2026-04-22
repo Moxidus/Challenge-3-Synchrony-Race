@@ -30,8 +30,8 @@
 
 #ifdef DAUGHTER_ROBOT
 // TODO: MEASURE THESE VALUES FOR THE MOTHER ROBOT and calibrate the adjustments to make it go straight and turn the correct amount when it should
-#define WHEEL_BASE 165
-#define WHEEL_RADIUS 32
+#define WHEEL_BASE 0.165
+#define WHEEL_RADIUS 0.032
 #define WHEEL_RADIUS_ADJUSTMENT 1.0 // this includes gear ration and encoder resolution
 #define WHEEL_BASE_ADJUSTMENT 0.9568421053  // adjust this to make the robot turn the correct amount when it should
 #define ADJUSTED_WHEEL_BASE (WHEEL_BASE * WHEEL_BASE_ADJUSTMENT)
