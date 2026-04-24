@@ -23,15 +23,7 @@ void LinearMotor::SetupLinearMotor() {
 
 
 void LinearMotor::MoveHome() {
-    
     encoderMotor.moveTo(0);
-
-    // CONFIGURE IF WE NEED AWAIT
-    // while (!Encoder_1.isTarPosReached())
-    // {
-    //     _delay(1);
-    // }
-    // _delay(1);
 }
 
 void LinearMotor::MoveMid()
@@ -39,26 +31,16 @@ void LinearMotor::MoveMid()
     encoderMotor.moveTo(300);
 }
 
-void LinearMotor::move(int steps)
-{
+void LinearMotor::move(int steps){
     encoderMotor.moveTo(steps);
 }
 
-void LinearMotor::MoveDown() {
+void LinearMotor::MoveDown(){
     
     encoderMotor.moveTo(1300);
-
-    // CONFIGURE IF WE NEED AWAIT
-    // while (!Encoder_1.isTarPosReached())
-    // {
-    //     _delay(1);
-    // }
-    // _delay(1);
 }
 
-
 // Special movment commands
-
 void LinearMotor::Update() {
     encoderMotor.loop();
 }

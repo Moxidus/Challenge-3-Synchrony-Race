@@ -68,25 +68,33 @@ def estimatePoseSingleMarkers(corners, marker_size, mtx, distortion):
 
 
 def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
-    # Undistort fisheye
+
+    # Undistort Wide angle lese distorsion from the A53 camera
     img, camMat = undistort_fisheye(img)
 
+    # convert to gray scale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    # using the built in OpenCv Aruco detection fuction
     detector = cv2.aruco.ArucoDetector(aruco_Dict, aruco_Params)
     corners, ids, rejected = detector.detectMarkers(gray)
     
+    # exit with default values if no tags were detected
     if ids is None:
         return img, None, None, None, None
 
+    # Draw the Aruco position for debugging purposes
     aruco.drawDetectedMarkers(img, corners, ids)
 
+    # Estimate the Aruco XYZ position including rotations
+    # For this we include camere calibration matrix file and expected AruCo tag size
     rvecs, tvecs, _ = estimatePoseSingleMarkers(
         corners, 0.042, camMat, None  # distortion already removed
     )
 
     for i in range(len(ids)):
         
+        # look only for specific tag and reject other tags
         if ids[i] != aruco_marker_id:
             continue
         
@@ -98,6 +106,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
         # 1. Convert rvec to a 3x3 Matrix
         rmat, _ = cv2.Rodrigues(rvec)
 
+        # convert Rotation vector to rotation in the each axis
         yaw_radians = math.atan2(rmat[1, 0], rmat[0, 0])
         pitch_radians = math.atan2(-rmat[2, 0], math.sqrt(rmat[2, 1]**2 + rmat[2, 2]**2))
         roll_radians = math.atan2(rmat[2, 1], rmat[2, 2])
@@ -118,6 +127,7 @@ def arucoPoseEstimation(camMat, distCoeff, img, drawDistance=False):
             text = f"ID {ids[i][0]}: {distance:.3f} m"
             print(corners[0][0][0][0], corners[0][0][0][1])
 
+            # overlay the distance text over the tag corner
             cv2.putText(img, text, (int(corners[0][0][0][0]), int(corners[0][0][0][1] - 10)),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1
             )
@@ -141,14 +151,6 @@ class ArucoTracking:
             
         # Initialize Aruco tracking parameters and variables
         pass
-
-    # def start_tracking(self):
-    #     # Start the Aruco tracking process
-    #     pass  
-
-    # def stop_tracking(self):
-    #     # Stop the Aruco tracking process
-    #     pass
 
     def get_marker_position(self):
         ret, img = self.webcam.read()
