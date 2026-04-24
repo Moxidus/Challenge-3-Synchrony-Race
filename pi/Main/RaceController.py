@@ -140,9 +140,31 @@ async def race():
 	await DTruckRadio.send_command("rotate 76")
 	await asyncio.sleep(2)
  
+ 
+ # the PARKING STAGE -------------------------------------------------------- START
+	await DTruckRadio.send_command("resetpos")
+ 
 	
-	await DTruckRadio.send_command("move 400")
-	await asyncio.sleep(4)
+	# await DTruckRadio.send_command("move 400")
+	# await asyncio.sleep(4)
+ 
+	# Turn on camera and send local coordinates of an Aruco marker to DTruck every frame
+	arucoTracking = ArucoTracking()
+
+	img, pos, yaw_degrees, pitch_degrees, roll_degrees = arucoTracking.get_marker_position()
+ 
+	xOffset = -0.16
+	yOffset = -0.05
+ 
+	x = round(pos[2][0] + xOffset, 4)
+	y = -round(pos[0][0] + yOffset, 4)
+	theta = roll_degrees * 0
+
+ 
+	await DTruckRadio.send_command(f"start relpoint {x} {y} {theta}") # these cordinates will be rotated in the robot
+	await asyncio.sleep(5)
+
+ # the PARKING STAGE -------------------------------------------------------- END
  
 	
 	await DFireRadio.send_command("close grip")
@@ -152,8 +174,13 @@ async def race():
 	await DTruckRadio.send_command("open grip")
 	await asyncio.sleep(3.5)
  
+ 
+ 
+
+ 
 	await DTruckRadio.send_command("move -400")
 	await asyncio.sleep(4)
+ 
  
  
 	await DTruckRadio.send_command("rotate 110")
@@ -166,8 +193,6 @@ async def race():
  
 	await DFireRadio.send_command("setHome")
 	await DTruckRadio.send_command("setHome")
- 
- 
  
  
 	await DTruckRadio.send_command("start track")
@@ -184,17 +209,12 @@ async def race():
 	await asyncio.sleep(5)
  
  
-	await DFireRadio.send_command("open grip")
-	await asyncio.sleep(3.5)
- 
- 
-	await asyncio.sleep(1000)
+	await asyncio.sleep(5000)
 
 	# Turn on camera and send local coordinates of an Aruco marker to DTruck every frame
 	arucoTracking = ArucoTracking()
 
-	img, arucoPosCameraFrame = arucoTracking.get_marker_position()
-	# TODO: convert arucoPosCameraFrame to global coordinates using camera_location and lineLocation and send to DTruck
+	img, pos, yaw_degrees, pitch_degrees, roll_degrees = arucoTracking.get_marker_position()
 
 	# wait for "reached point B" signal from DTruck
 	if not await DTruckRadio.wait_for_command("reached B"):

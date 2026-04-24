@@ -285,7 +285,7 @@
   285  sudo chmod +x /usr/local/bin/droidcam-cli
   286  droidcam-cli 
   287  droidcam-cli adb
-  288  droidcam-cli adb 4755
+  288  droidcam-cli adb 4750
   289  ls -l /dev/video*
   290  v4l2-ctl --list-devices
   291  lsmod | grep v4l2
