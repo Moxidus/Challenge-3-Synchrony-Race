@@ -410,7 +410,7 @@ int executeCommand(String cmd)
 
 
 
-#define DISABLE_BETA
+// #define DISABLE_BETA
 
 
 #define kp (0.005)
